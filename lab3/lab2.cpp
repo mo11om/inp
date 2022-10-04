@@ -109,21 +109,21 @@ int main (int argc, char *argv[]){
     if(file_pointer[i]-> check_sum ==check_tmp){
 
       lseek(fd,pako->off_dat + file_pointer[i]->off_cont , SEEK_SET );
-      printf (" %x \n" ,pako->off_dat + file_pointer[i]->off_cont) ;
-       cout<< f_str[i]<<endl;
+      // printf (" %x \n" ,) ;
+      //  cout<< f_str[i]<<endl;
       // string path  ="/tmp/inplab2test/"+f_str[i];
       string path = argv[2]+f_str[i];
       const char* c_path= path.c_str();
       int w_fd = creat(c_path, (S_IRWXU));
-      cout<<"w_fd: "<< w_fd<<endl;
+      //cout<<"w_fd: "<< w_fd<<endl;
       char c_tmp[file_pointer[i]->size_file];
       
       res=read(fd, c_tmp ,file_pointer[i]->size_file);
-      cout<<res<<endl;
+      // cout<<res<<endl;
       cout<<"w_fd: "<< w_fd<<endl;
 
       write(w_fd,  c_tmp, file_pointer[i]->size_file);
-      printf(" %s \n" ,c_tmp); 
+      // printf(" %s \n" ,c_tmp); 
       close(w_fd);
       
     }

@@ -35,8 +35,8 @@ int main (int argc, char *argv[]){
 
   ssize_t res = read(fd,pako,sizeof(pako_header_t));
 
-  cout<<"res : " << res<<endl;
-  printf ("magic %x \n nfile %d \n offdat %x \n offstr %x\n",   (pako->magic),pako->n_files, pako->off_dat,pako->off_str);
+  //cout<<"res : " << res<<endl;
+  //printf ("magic %x \n nfile %d \n offdat %x \n offstr %x\n",   (pako->magic),pako->n_files, pako->off_dat,pako->off_str);
   int32_t n_files=pako->n_files;
 
    FILE_E * file_pointer[n_files];
@@ -88,42 +88,55 @@ int main (int argc, char *argv[]){
   //  printf (" %x \n" ,pako->off_dat + file_pointer[i]->off_cont) ;
      
    lseek(fd,pako->off_dat + file_pointer[i]->off_cont , SEEK_SET );
-    // for  (file_pointer[i]-> )
+    
     uint32_t tmp = file_pointer[i]->size_file;
     uint64_t check_tmp=0;
     uint64_t* buf=new uint64_t;
-
+    ll cur ;
+    //cout<<i<<endl;
     while(tmp>0){
+      
+      //cout<<tmp<<endl;
       if (tmp > sizeof(uint64_t)){
         tmp -= sizeof(uint64_t) ;
+        read(fd, buf ,sizeof(uint64_t));
+        check_tmp=check_tmp ^ *buf;
+        //printf (" %lx \n",*buf ); 
       }
       else {
           tmp =0;
+          *buf=0;
+          res =read(fd, buf , sizeof(uint64_t));
+          check_tmp=check_tmp ^ *buf;
+       //   printf ("%ld %lx \n",res,*buf ); 
       }
+      
+      
 
-      read(fd, buf ,sizeof(uint64_t));
-      check_tmp=check_tmp ^ *buf;
       
     }
-     
+    // printf ("check temp %lx \n",check_tmp ); 
+ 
+    //  printf 
     if(file_pointer[i]-> check_sum ==check_tmp){
 
       lseek(fd,pako->off_dat + file_pointer[i]->off_cont , SEEK_SET );
-      printf (" %x \n" ,pako->off_dat + file_pointer[i]->off_cont) ;
-       cout<< f_str[i]<<endl;
+      //printf (" %x \n" ,pako->off_dat + file_pointer[i]->off_cont) ;
+      //printf("%s size %d ",f_str[i] ,file_pointer[i]->size_file);
+       cout<< f_str[i]<<" \t" << file_pointer[i]->size_file<<endl;
       // string path  ="/tmp/inplab2test/"+f_str[i];
       string path = argv[2]+f_str[i];
       const char* c_path= path.c_str();
       int w_fd = creat(c_path, (S_IRWXU));
-      cout<<"w_fd: "<< w_fd<<endl;
+      // cout<<"w_fd: "<< w_fd<<endl;
       char c_tmp[file_pointer[i]->size_file];
       
       res=read(fd, c_tmp ,file_pointer[i]->size_file);
-      cout<<res<<endl;
-      cout<<"w_fd: "<< w_fd<<endl;
+      // cout<<res<<endl;
+      // cout<<"w_fd: "<< w_fd<<endl;
 
       write(w_fd,  c_tmp, file_pointer[i]->size_file);
-      printf(" %s \n" ,c_tmp); 
+      // printf(" %s \n" ,c_tmp); 
       close(w_fd);
       
     }
