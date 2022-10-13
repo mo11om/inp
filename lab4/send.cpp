@@ -75,7 +75,7 @@ int main(int argc, char const* argv[])
 	 
 	char* p;
 	float  byterate = stof (argv[1] );
-	byterate= 1000*byterate;
+	byterate= 999*byterate;
 	int send_rate = (int)byterate;
 	bool flag =true;
 	printf("%d \n", send_rate);
