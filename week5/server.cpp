@@ -46,14 +46,51 @@ void func(int connfd)
 void prob(int connfd,char* argv[]){
 	
 			dup2( connfd, STDOUT_FILENO );
+			if (sizeof(argv[2])/sizeof(char)<6){
+				execv(argv[2],argv+2);
+				perror("execv  "   );
+			}
+			else{
+				if(execvp(argv[2],argv+2)==-1)
+				{
+					dup2( connfd, STDERR_FILENO );
+					perror("execvp" );	
+				}
+				 
+				
+			}
 			
-			execv(argv[2],argv+2);
-			perror("execv  "   );
-			execvp(argv[2],argv+2);
-			perror("execvp" );
 
 
 }
+void prob4(int connfd,char* argv[]){
+			printf("prob4 \n");
+			dup2( connfd, STDOUT_FILENO );
+			dup2( connfd, STDERR_FILENO );
+			
+			execvp(argv[2],argv+2) ;
+			 
+			//perror("execvp" );
+			 
+			
+
+
+}
+void prob5(int connfd,char* argv[]){
+			printf("prob4 \n");
+			dup2( connfd, STDOUT_FILENO );
+			dup2( connfd, STDERR_FILENO );
+			dup2( connfd, STDIN_FILENO );
+			
+			execvp(argv[2],argv+2) ;
+			 
+			//perror("execvp" );
+			 
+			
+
+
+}
+
 void sig_chld(int signo)
 {
 pid_t pid;
@@ -68,6 +105,7 @@ int main(int argc, char * argv[])
 	int sockfd, connfd;
 	struct sockaddr_in servaddr, cli;
 	signal(SIGCHLD,sig_chld);
+	signal(SIGTERM,sig_chld);
 	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
@@ -123,7 +161,13 @@ int main(int argc, char * argv[])
 		pid_t childpid;
 		if ( (childpid = fork()) == 0) { /* child process */
 			close(sockfd); /* close listening socket */
-			prob(connfd,argv);
+			if( argc==3)
+				prob(connfd,argv);
+			else if (sizeof(argv[2])/sizeof(char)==3)
+				prob4(connfd,argv);
+			else if (sizeof(argv[2])/sizeof(char)==8)
+				prob5(connfd,argv);
+
 			exit(0);
 		}
 		close(connfd);	
