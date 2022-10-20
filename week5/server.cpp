@@ -120,7 +120,7 @@ int main(int argc, char * argv[])
 	uint32_t port =std::atoi(argv[1]) ;
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(PORT);
+	servaddr.sin_port = htons(port);
 
 	// Binding newly created socket to given IP and verification
 	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
