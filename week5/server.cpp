@@ -124,6 +124,7 @@ int main(int argc, char * argv[])
 
 	// Binding newly created socket to given IP and verification
 	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
+		perror("bind");
 		printf("socket bind failed...\n");
 		exit(0);
 	}
