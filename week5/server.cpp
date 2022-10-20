@@ -53,7 +53,7 @@ void prob(int connfd,char* argv[]){
 			else{
 				if(execvp(argv[2],argv+2)==-1)
 				{
-					dup2( connfd, STDERR_FILENO );
+					///dup2( connfd, STDERR_FILENO );
 					perror("execvp" );	
 				}
 				 
