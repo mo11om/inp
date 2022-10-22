@@ -177,10 +177,11 @@ void deal_input(int sockfd ,char* buf,int size,map<int, string[2]> &map_Name_Ip_
 
 	}
 	else {
+			iter=map_Name_Ip_and_port.find(sockfd);
+			string  s_message=  "<"+iter->second[0]+">"+"\t"+date_get()+message;
+			// s_message= ;
 			
-			string  s_message=date_get();
-			
-			s_message+=  message;
+			//s_message=  ;
 		 	for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++)
 				if (iter->first!=sockfd){
 					
