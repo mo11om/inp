@@ -17,6 +17,8 @@
 #include <poll.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <sstream>
+#include <vector>
 #include <map>
 #include "aa.h"
 #define MAXLINE 500
@@ -149,14 +151,32 @@ void hello_client(int connfd)
 
 	// }
 }
-
+void simple_tokenizer(string s,vector<string>& arg)
+{
+    stringstream ss(s);
+    string word;
+    while (ss >> word) {
+		arg.push_back(word);
+        cout << word << endl;
+    }
+}
 void deal_input(int sockfd ,char* buf,int size,map<int, string[2]> &map_Name_Ip_and_port){
 	string message (buf,size);
 	map<int, string[2]>::iterator iter;
 	string split="--------------------------------------------------\n";
 
 	if	(message.find("/name") != std::string::npos){
+		vector<string> arg;
+		 simple_tokenizer(message,arg);
 		 
+		 if(arg.size()==3){
+			iter=map_Name_Ip_and_port.find(sockfd);
+			iter->second[0]=arg[1]+" "+arg[2];
+		 }
+		 else{
+			string  s_message=   date_get()+"Unknown or incomplete command </name>"+"\n";
+			write(sockfd,s_message.c_str(),s_message.length() );
+		 }
 
 	}
 	else if(message.find("/who") != std::string::npos){
