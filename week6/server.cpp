@@ -92,6 +92,12 @@ void erase_map(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
 	cout<< "* client"<< iter->second[1] <<" disconnected"<<endl;
 
     map_Name_Ip_and_port.erase(iter);
+	string s_message=  "* client"+ iter->second[1] +" disconnected \n";
+
+	for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++){
+			int sockfd=iter->first;
+			write(sockfd,s_message.c_str(),s_message.length() );
+		}
 
 }
 string nick_name_get(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
