@@ -35,7 +35,7 @@ using namespace std;
 
 //map all member 
 map<int, string[2]> map_Name_Ip_and_port;
-map <int ,vector<string>> map_fd_channels;
+map <int ,vector<int>> map_fd_channels;
 
 
 struct channel{
@@ -86,7 +86,7 @@ string get_ip_port(int connfd){
     if (getpeername(connfd, (struct sockaddr *)&get_ip_port, &len) == -1)
     		perror("getsockname");
 		else{
-			sprintf(buffer,"%s:%u", inet_ntoa(get_ip_port.sin_addr) ,ntohs(get_ip_port.sin_port));
+			sprintf(buffer,"%s", inet_ntoa(get_ip_port.sin_addr));
 			
 			 _ip_port =buffer;
 			 //cout<< "* client connected from "<<_ip_port; 
@@ -112,12 +112,11 @@ void erase_map(int fd ){
 	cout<< "* client"<< iter->second[1] <<" disconnected"<<endl;
 
     map_Name_Ip_and_port.erase(iter);
-	string s_message=  "* client"+ iter->second[1] +" disconnected \n";
-
-	for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++){
-			int sockfd=iter->first;
-			write(sockfd,s_message.c_str(),s_message.length() );
-		}
+	  
+	// for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++){
+	// 		int sockfd=iter->first;
+	// 		write(sockfd,s_message.c_str(),s_message.length() );
+	// 	}
 
 }
 string nick_name_get(int fd ){
@@ -139,8 +138,8 @@ int  add_channel(int sockfd,string nickname,string chnnel_name){
  void set_server(int sockfd,string nickname){
 	 
 	cout<<sockfd <<nickname <<endl;
-	vector <string> tmp_vec ;
-	tmp_vec.push_back(nickname);
+	vector<int> tmp_vec ;
+	tmp_vec.push_back(0);
 	map_fd_channels[sockfd]=tmp_vec;
 
 
@@ -156,7 +155,7 @@ int  add_channel(int sockfd,string nickname,string chnnel_name){
 		
 	}
 
-	map <int ,vector<string>>::iterator iter;
+	map <int ,vector<int>>::iterator iter;
 	for( iter= map_fd_channels.begin(); iter != map_fd_channels.end(); iter++) {
 		cout<<iter->first;
 		for(int i=0; i<iter->second.size(); i++) cout<<i<<" " << iter->second.at(i) << " ";
@@ -166,11 +165,32 @@ int  add_channel(int sockfd,string nickname,string chnnel_name){
 	cout<<endl;
  
 
+}
+
+
+void erase_server(int fd ){
+	map<int, vector <int>>::iterator iter ;
+	vector <int>::iterator channel_s;
+	 
+	iter = map_fd_channels.find(fd);
 	
+	for(channel_s=iter->second.begin(); channel_s!=iter->second.end();channel_s++ )
+	{
+		cout<<"clean channel"<<*channel_s<<endl;
+		 
+		all_channels[*channel_s]->map_channel_fd_nickname.erase(fd);
+		 
+		
+	} 
+	map_fd_channels.erase(iter);
 
-
+	// for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++){
+	// 		int sockfd=iter->first;
+	// 		write(sockfd,s_message.c_str(),s_message.length() );
+	// 	}
 
 }
+
 void split_instructions (string strlist,vector<string>& cmd){
  
     std::istringstream MyStream(strlist);
@@ -312,6 +332,7 @@ void deal_input(int sockfd ,char* buf,int size ){
 
 		}
 		else if(arg[0]=="QUIT"){
+			erase_server(sockfd);
 			
 		}
 		else if(arg[0]=="PING" ){
@@ -328,6 +349,10 @@ void deal_input(int sockfd ,char* buf,int size ){
 
 			}
 		}
+		else if(arg[0]=="USERS" ){
+			send_users(sockfd);
+		}
+		
 		else {
 			string ERR_UNKNOWNCOMMAND=":mircd 421  "+arg[0]+" :Unknown command\r\n";
 			
@@ -462,6 +487,7 @@ int main(int argc, char * argv[])
 					//printf("client  %i shutdown \n" ,sockfd );
 					// remove from map
 					int tmp=sockfd;
+					
 					erase_map(tmp );
 					close(sockfd);
 
