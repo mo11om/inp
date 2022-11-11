@@ -131,8 +131,28 @@ string nick_name_get(int fd ){
 	return name;
 }
 //get_online_users();
-int  add_channel(int sockfd,string nickname,string chnnel_name){
-	return 0;
+int  add_channel(int sockfd,string nickname,string channel_name){
+	int i;
+	for ( i= 1 ;i<all_channels.size();i++){
+		if (all_channels.at(i)->name==channel_name){
+			all_channels.at(i)->map_channel_fd_nickname[sockfd]=nickname;
+			map_fd_channels[sockfd] .push_back(sockfd);
+			return i;
+		}
+	}
+	if (i==all_channels.size()){
+		channel* tmp = new channel;
+		tmp->name= channel_name;
+		tmp->map_channel_fd_nickname[sockfd]=nickname;
+		all_channels.push_back(tmp);
+		map_fd_channels[sockfd].push_back(sockfd);
+		return i;
+	}
+}
+void join_channel(int sockfd,string nickname,string channel_name){
+	 i=add_channel(sockfd, nickname, channel_name);
+	 
+
 }
 
  void set_server(int sockfd,string nickname){
@@ -190,6 +210,64 @@ void erase_server(int fd ){
 	// 	}
 
 }
+void list_one_channel(int sockfd,string chnnel_name){
+	string RPL_LISTSTART	=":mircd  321 Channel :Users  Name \r\n";
+	write(sockfd,RPL_LISTSTART.c_str(),RPL_LISTSTART.length() );
+
+
+
+	for (int i = 1 ;i<all_channels.size();i++){//要改0->1
+		if(all_channels.at(i)->name==chnnel_name )
+	{	
+		string channel_info= ":mircd 322 #"+all_channels.at(i)->name+" "+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic ;
+		cout<< "channels "<< channel_info<<endl;
+		write(sockfd,channel_info.c_str(),channel_info.length() );
+		}
+
+	}
+	string RPL_LISTEND	=":mircd  323 Channel :End of /LIST \r\n";
+	write(sockfd,RPL_LISTEND.c_str(),RPL_LISTEND.length() );
+
+}
+void list_channels(int sockfd){
+	string RPL_LISTSTART	=":mircd  321 Channel :Users  Name \r\n";
+	write(sockfd,RPL_LISTSTART.c_str(),RPL_LISTSTART.length() );
+
+
+
+	for (int i = 1 ;i<all_channels.size();i++){//要改0->1
+		string channel_info= ":mircd 322 #"+all_channels.at(i)->name+" "+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic ;
+		cout<< "channels "<< channel_info<<endl;
+		write(sockfd,channel_info.c_str(),channel_info.length() );
+
+	}
+	string RPL_LISTEND	=":mircd  323 Channel :End of /LIST \r\n";
+	write(sockfd,RPL_LISTEND.c_str(),RPL_LISTEND.length() );
+
+}
+
+void send_users(int sockfd){
+	 
+	map <int ,string>::iterator iter;
+	string RPL_USERSSTART	=":mircd  392 :UserID Terminal Host \r\n";
+	write(sockfd,RPL_USERSSTART.c_str(),RPL_USERSSTART.length() );
+	
+	for( iter=  all_channels[0]->map_channel_fd_nickname.begin();
+		iter!=  all_channels[0]->map_channel_fd_nickname.end();
+		iter++ )
+	{
+		 
+		string user_info=":mircd  393 :"+iter->second+" - "+get_ip_port(iter->first)+"\r\n";
+		 write(sockfd,user_info.c_str(),user_info.length() );
+		cout<<user_info<<endl;
+
+		 
+	} 
+	string RPL_ENDOFUSERS	=":mircd  394 :End of user\r\n";
+	 write(sockfd,RPL_ENDOFUSERS.c_str(),RPL_ENDOFUSERS.length() );
+}
+
+
 
 void split_instructions (string strlist,vector<string>& cmd){
  
@@ -307,10 +385,11 @@ void deal_input(int sockfd ,char* buf,int size ){
 
 				set_server(sockfd,nickname);
 				//send sucess message
+				string us_num= to_string(map_fd_channels.size());
 				cout<<"user receive"<<endl;
 				 
 				string Welcome	=":mircd 001 "+nickname+ " :Welcome to the minimized IRC daemon!\r\n";
-				string users =":mircd 251 "+nickname+" :There are 1 users and 0 invisible on 1 server\r\n";
+				string users =":mircd 251 "+nickname+" :There are "+us_num+" users and 0 invisible on 1 server\r\n";
 								
 				string motd_start=":mircd 375 "+nickname+" :- mircd Message of the day -\r\n";
 				string motd 	= ":mircd 372 "+nickname+" :-  Hello, World!\r\n";
@@ -351,6 +430,17 @@ void deal_input(int sockfd ,char* buf,int size ){
 		}
 		else if(arg[0]=="USERS" ){
 			send_users(sockfd);
+		}
+		else if (arg[0]=="LIST"){
+			if(arg.size()==1){
+			list_channels(sockfd);
+
+			}
+			else if(arg.size()==2)
+			{
+
+			}
+
 		}
 		
 		else {
