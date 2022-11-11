@@ -31,9 +31,22 @@
 #define INFTIM -1
 using namespace std;
 
+
+
 //map all member 
 map<int, string[2]> map_Name_Ip_and_port;
-map <int ,vector<string>> map_in_server_nick_fd;
+map <int ,vector<string>> map_fd_channels;
+
+
+struct channel{
+	string name="";
+	string topic="";
+	map <int ,string> map_channel_fd_nickname;
+};
+
+vector<channel*> all_channels;
+
+ 
 
 string date_get(  ){
 	string date_str;
@@ -119,9 +132,45 @@ string nick_name_get(int fd ){
 	return name;
 }
 //get_online_users();
+int  add_channel(int sockfd,string nickname,string chnnel_name){
+	return 0;
+}
+
+ void set_server(int sockfd,string nickname){
+	 
+	cout<<sockfd <<nickname <<endl;
+	vector <string> tmp_vec ;
+	tmp_vec.push_back(nickname);
+	map_fd_channels[sockfd]=tmp_vec;
+
+
+	if (all_channels.empty()){
+		channel* server= new channel;
+		server->name= "server";
+		server->map_channel_fd_nickname[sockfd]=nickname;
+		all_channels.push_back(server);
+	}
+
+	else{
+		all_channels[0]->map_channel_fd_nickname[sockfd]=nickname;
+		
+	}
+
+	map <int ,vector<string>>::iterator iter;
+	for( iter= map_fd_channels.begin(); iter != map_fd_channels.end(); iter++) {
+		cout<<iter->first;
+		for(int i=0; i<iter->second.size(); i++) cout<<i<<" " << iter->second.at(i) << " ";
+		cout<<endl;
+		
+	}
+	cout<<endl;
  
 
- 
+	
+
+
+
+}
 void split_instructions (string strlist,vector<string>& cmd){
  
     std::istringstream MyStream(strlist);
@@ -213,8 +262,12 @@ void deal_input(int sockfd ,char* buf,int size ){
 			else{
 				cout<< " nick receive \n" ;
 				map_Name_Ip_and_port[sockfd][0]=arg.at(1);
+				string motd_start=":mircd 375 "+nickname+" :- mircd Message of the day -\r\n";
 				string motd 	= ":mircd 372 "+nickname+" :-  Hello, World!\r\n";
-				write(sockfd, motd .c_str(), motd .length());
+				string motd_end =":mircd 376 "+nickname+" :End of message of the day\r\n";	
+				write(sockfd, motd_start .c_str(), motd_start.length());
+				write(sockfd, motd .c_str(), motd.length());
+				write(sockfd, motd_end .c_str(), motd_end.length());
 			}
 			
 			
@@ -228,6 +281,12 @@ void deal_input(int sockfd ,char* buf,int size ){
 				
 			}
 			else{
+
+				// add into server map
+
+
+				set_server(sockfd,nickname);
+				//send sucess message
 				cout<<"user receive"<<endl;
 				 
 				string Welcome	=":mircd 001 "+nickname+ " :Welcome to the minimized IRC daemon!\r\n";
@@ -251,6 +310,9 @@ void deal_input(int sockfd ,char* buf,int size ){
 	
 			
 
+		}
+		else if(arg[0]=="QUIT"){
+			
 		}
 		else if(arg[0]=="PING" ){
 			if (arg.size()== 1){
