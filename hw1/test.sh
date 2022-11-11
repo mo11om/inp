@@ -1,0 +1,1 @@
+bash -c 'MAX=1000; I=0; while [ "$I" -lt "$MAX" ]; do I=$((I+1));(timeout 30 nc -d localhost 11111 >/dev/null 2>&1 &) done'
