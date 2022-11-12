@@ -247,11 +247,7 @@ int  add_channel(int sockfd,string nickname,string channel_name){
 	return i;
 }
 
-void names_all(int sockfd){
-	for (int i = 1 ;i<all_channels.size();i++){
-
-	}
-}
+ 
 
 void names_channel(int sockfd ,string channel_name){
 	for (int i = 1 ;i<all_channels.size();i++){
@@ -314,6 +310,7 @@ void send_users(int sockfd){
 	 write(sockfd,RPL_ENDOFUSERS.c_str(),RPL_ENDOFUSERS.length() );
 }
 void  not_on_channel(int sockfd){
+	":mircd  442 "+nick_name_get(sockfd)+"   :You're not on that channel\r\n";
 
 }
 
@@ -354,17 +351,38 @@ void part_channel(int fd ,string nickname ,string channel_name){
 	for (int i = 1 ;i<all_channels.size();i++){
 		if (channel_name== all_channels[i]->name){
 			 
-			
+			string part_m= ":"+nickname+" PART :#"+channel_name+"\r\n";
 			all_channels[i]->map_channel_fd_nickname.erase(fd);
-		 
-			 string part_m= ":"+nickname+" PART :#"+channel_name+"\r\n";
+
+			map <int ,string> ::iterator  iter;
+			write(fd,part_m.c_str(),part_m.length() );
+			for(iter=all_channels[i]->map_channel_fd_nickname.begin();iter!=all_channels[i]->map_channel_fd_nickname.end();iter++){
+			
 			 cout<<part_m;
-			 write(fd,part_m.c_str(),part_m.length() );
+			 write(iter->first,part_m.c_str(),part_m.length() );
+			}
+
+			 
 			break;
 		}
 	}
 }
 
+void privmsg(int sockfd,string nickname,string channel_name,string m_send){
+
+	for (int i = 1 ;i<all_channels.size();i++){
+		if (channel_name== all_channels[i]->name){
+			map <int ,string> ::iterator  iter;
+			for(iter=all_channels[i]->map_channel_fd_nickname.begin();iter!=all_channels[i]->map_channel_fd_nickname.end();iter++){
+					if(iter->first!= sockfd)
+					{string message  =":"+nickname+" PRIVMSG #"+channel_name+" :" +m_send +  "\r\n"; 
+					cout<<iter->first <<message;
+					write(iter->first,message.c_str(),message.length() );}
+			}
+
+		}
+	}
+}
 void split_instructions (string strlist,vector<string>& cmd){
  
     std::istringstream MyStream(strlist);
@@ -443,7 +461,7 @@ void deal_input(int sockfd ,char* buf,int size ){
 			if (arg.size()== 1){
 				string no_give_nick=":mircd 251 "+nickname+" :No nickname given\r\n";
 
-				write(sockfd, no_give_nick .c_str(), no_give_nick .length());
+				//write(sockfd, no_give_nick .c_str(), no_give_nick .length());
 				 
 			}
 			else if (check_nickname(arg[1])){
@@ -574,11 +592,24 @@ void deal_input(int sockfd ,char* buf,int size ){
 			}
 
 			else if(arg.size()>2){
+				
 				 part_channel(sockfd,nickname,arg[1].erase(0,1));
 			}
 				
 
 		}
+		else if(arg[0]=="PRIVMSG"){
+			if (arg.size()>=3){
+				string message=arg[2].erase(0,1);
+				for (int i = 3 ;i<arg.size(); i++){
+					
+					message =message + " "+ arg.at(i);
+				}
+				privmsg(sockfd,nickname,arg[1].erase(0,1),message);
+
+			}
+			
+		} 
 		else {
 			string ERR_UNKNOWNCOMMAND=":mircd 421  "+arg[0]+" :Unknown command\r\n";
 			
