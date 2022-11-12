@@ -349,6 +349,21 @@ void topic_change(int sockfd,string nickname,string channel_name,string topic_na
 	topic_view(sockfd ,nickname,channel_name);
 
 }
+void part_channel(int fd ,string nickname ,string channel_name){
+	cout<<"part_m"<<endl;
+	for (int i = 1 ;i<all_channels.size();i++){
+		if (channel_name== all_channels[i]->name){
+			 
+			
+			all_channels[i]->map_channel_fd_nickname.erase(fd);
+		 
+			 string part_m= ":"+nickname+" PART :#"+channel_name+"\r\n";
+			 cout<<part_m;
+			 write(fd,part_m.c_str(),part_m.length() );
+			break;
+		}
+	}
+}
 
 void split_instructions (string strlist,vector<string>& cmd){
  
@@ -543,8 +558,8 @@ void deal_input(int sockfd ,char* buf,int size ){
 			}
 				
 			else{
-				
-				for (int i = 2 ;i<arg.size(); i++){
+				string topic_name=arg[2].erase(0,1);
+				for (int i = 3 ;i<arg.size(); i++){
 					
 					topic_name =topic_name + " "+ arg.at(i);
 				}
@@ -552,6 +567,17 @@ void deal_input(int sockfd ,char* buf,int size ){
 				topic_change(sockfd ,nickname,arg[1].erase(0,1),topic_name);
 			}
 		 
+		}
+		else if (arg[0]=="PART"){
+			if(arg.size()==1){
+
+			}
+
+			else if(arg.size()>2){
+				 part_channel(sockfd,nickname,arg[1].erase(0,1));
+			}
+				
+
 		}
 		else {
 			string ERR_UNKNOWNCOMMAND=":mircd 421  "+arg[0]+" :Unknown command\r\n";
