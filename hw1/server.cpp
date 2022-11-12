@@ -131,29 +131,7 @@ string nick_name_get(int fd ){
 	return name;
 }
 //get_online_users();
-int  add_channel(int sockfd,string nickname,string channel_name){
-	int i;
-	for ( i= 1 ;i<all_channels.size();i++){
-		if (all_channels.at(i)->name==channel_name){
-			all_channels.at(i)->map_channel_fd_nickname[sockfd]=nickname;
-			map_fd_channels[sockfd] .push_back(sockfd);
-			return i;
-		}
-	}
-	if (i==all_channels.size()){
-		channel* tmp = new channel;
-		tmp->name= channel_name;
-		tmp->map_channel_fd_nickname[sockfd]=nickname;
-		all_channels.push_back(tmp);
-		map_fd_channels[sockfd].push_back(sockfd);
-		return i;
-	}
-}
-void join_channel(int sockfd,string nickname,string channel_name){
-	 i=add_channel(sockfd, nickname, channel_name);
-	 
 
-}
 
  void set_server(int sockfd,string nickname){
 	 
@@ -166,6 +144,7 @@ void join_channel(int sockfd,string nickname,string channel_name){
 	if (all_channels.empty()){
 		channel* server= new channel;
 		server->name= "server";
+		server->topic= "server_topic";
 		server->map_channel_fd_nickname[sockfd]=nickname;
 		all_channels.push_back(server);
 	}
@@ -196,13 +175,14 @@ void erase_server(int fd ){
 	
 	for(channel_s=iter->second.begin(); channel_s!=iter->second.end();channel_s++ )
 	{
-		cout<<"clean channel"<<*channel_s<<endl;
+		cout<<"clean channel "<<*channel_s<<endl;
 		 
 		all_channels[*channel_s]->map_channel_fd_nickname.erase(fd);
 		 
 		
 	} 
-	map_fd_channels.erase(iter);
+	cout<<fd;
+	map_fd_channels.erase(fd);
 
 	// for(iter = map_Name_Ip_and_port.begin(); iter != map_Name_Ip_and_port.end(); iter++){
 	// 		int sockfd=iter->first;
@@ -210,46 +190,113 @@ void erase_server(int fd ){
 	// 	}
 
 }
-void list_one_channel(int sockfd,string chnnel_name){
-	string RPL_LISTSTART	=":mircd  321 Channel :Users  Name \r\n";
+
+void list_one_channels(int sockfd,string channel_name){
+	string RPL_LISTSTART	=":mircd  321 "+nick_name_get(sockfd)+" Channel :Users  Name \r\n";
 	write(sockfd,RPL_LISTSTART.c_str(),RPL_LISTSTART.length() );
 
 
 
 	for (int i = 1 ;i<all_channels.size();i++){//要改0->1
-		if(all_channels.at(i)->name==chnnel_name )
-	{	
-		string channel_info= ":mircd 322 #"+all_channels.at(i)->name+" "+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic ;
-		cout<< "channels "<< channel_info<<endl;
-		write(sockfd,channel_info.c_str(),channel_info.length() );
+		if(all_channels.at(i)->name ==channel_name){
+				string channel_info= ":mircd 322 "+nick_name_get(sockfd)+" "+all_channels.at(i)->name+" #"+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic +"\r\n";
+			cout<< "channels "<< channel_info<<endl;
+			write(sockfd,channel_info.c_str(),channel_info.length() );
 		}
+		
 
 	}
-	string RPL_LISTEND	=":mircd  323 Channel :End of /LIST \r\n";
+	string RPL_LISTEND	=":mircd  323 "+nick_name_get(sockfd)+" Channel :End of /LIST \r\n";
 	write(sockfd,RPL_LISTEND.c_str(),RPL_LISTEND.length() );
 
-}
+} 
 void list_channels(int sockfd){
-	string RPL_LISTSTART	=":mircd  321 Channel :Users  Name \r\n";
+	string RPL_LISTSTART	=":mircd  321 "+nick_name_get(sockfd)+" Channel :Users  Name \r\n";
 	write(sockfd,RPL_LISTSTART.c_str(),RPL_LISTSTART.length() );
 
 
 
 	for (int i = 1 ;i<all_channels.size();i++){//要改0->1
-		string channel_info= ":mircd 322 #"+all_channels.at(i)->name+" "+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic ;
+		string channel_info= ":mircd 322 "+nick_name_get(sockfd)+" "+all_channels.at(i)->name+" #"+to_string(all_channels.at(i)->map_channel_fd_nickname.size())+" :"+all_channels.at(i)->topic +"\r\n";
 		cout<< "channels "<< channel_info<<endl;
 		write(sockfd,channel_info.c_str(),channel_info.length() );
 
 	}
-	string RPL_LISTEND	=":mircd  323 Channel :End of /LIST \r\n";
+	string RPL_LISTEND	=":mircd  323 "+nick_name_get(sockfd)+" Channel :End of /LIST \r\n";
 	write(sockfd,RPL_LISTEND.c_str(),RPL_LISTEND.length() );
 
 }
+
+int  add_channel(int sockfd,string nickname,string channel_name){
+	int i;
+	for ( i= 1 ;i<all_channels.size();i++){
+		if (all_channels.at(i)->name==channel_name){
+			all_channels.at(i)->map_channel_fd_nickname[sockfd]=nickname;
+			map_fd_channels[sockfd] .push_back(i);
+			return i;
+		}
+	}
+	if (i==all_channels.size()){
+		channel* tmp = new channel;
+		tmp->name= channel_name;
+		tmp->map_channel_fd_nickname[sockfd]=nickname;
+		all_channels.push_back(tmp);
+		map_fd_channels[sockfd].push_back(i);
+		
+	}
+	return i;
+}
+
+void names_all(int sockfd){
+	for (int i = 1 ;i<all_channels.size();i++){
+
+	}
+}
+
+void names_channel(int sockfd ,string channel_name){
+	for (int i = 1 ;i<all_channels.size();i++){
+		if (channel_name== all_channels[i]->name){
+			map <int ,string> ::iterator  iter;
+
+			for(iter=all_channels[i]->map_channel_fd_nickname.begin();iter!=all_channels[i]->map_channel_fd_nickname.end();iter++){
+					string name =":mircd 353 "+nick_name_get(sockfd)+" #"+channel_name+" :"+iter->second+"\r\n"; 
+					write(sockfd,name.c_str(),name.length() );
+			}
+			
+			
+			break;
+		}
+		
+	}
+
+	string end = ":mircd 366 "+nick_name_get(sockfd)+" #"+channel_name+" :End of Names List\r\n";
+	cout<<end;
+	write(sockfd,end.c_str(),end.length() );
+
+}
+void join_channel(int sockfd,string nickname,string channel_name){
+	int index=add_channel(sockfd, nickname, channel_name);
+	 string has_joined=":"+nickname+" JOIN #"+channel_name+"\r\n";
+	 string  topic_set="";
+	if (all_channels[index]->topic==""){
+		topic_set=":mircd 331 "+nickname+" #"+channel_name+" :No topic is set\r\n";
+	}
+	else{
+		topic_set=":mircd 331 "+nickname+" #"+channel_name+" :"+ all_channels.at(index)->topic+"\r\n";
+
+	}
+	cout<< topic_set<<endl;
+	write(sockfd,has_joined.c_str(),has_joined.length() );
+	write(sockfd,topic_set.c_str(),topic_set.length() );
+
+	names_channel(sockfd,channel_name);
+}
+
 
 void send_users(int sockfd){
 	 
 	map <int ,string>::iterator iter;
-	string RPL_USERSSTART	=":mircd  392 :UserID Terminal Host \r\n";
+	string RPL_USERSSTART	=":mircd  392  "+nick_name_get(sockfd)+"  :UserID Terminal Host \r\n";
 	write(sockfd,RPL_USERSSTART.c_str(),RPL_USERSSTART.length() );
 	
 	for( iter=  all_channels[0]->map_channel_fd_nickname.begin();
@@ -257,17 +304,51 @@ void send_users(int sockfd){
 		iter++ )
 	{
 		 
-		string user_info=":mircd  393 :"+iter->second+" - "+get_ip_port(iter->first)+"\r\n";
+		string user_info=":mircd  393  "+nick_name_get(sockfd)+"  :"+iter->second+" - "+get_ip_port(iter->first)+"\r\n";
 		 write(sockfd,user_info.c_str(),user_info.length() );
 		cout<<user_info<<endl;
 
 		 
 	} 
-	string RPL_ENDOFUSERS	=":mircd  394 :End of user\r\n";
+	string RPL_ENDOFUSERS	=":mircd  394   "+nick_name_get(sockfd)+"  :End of user\r\n";
 	 write(sockfd,RPL_ENDOFUSERS.c_str(),RPL_ENDOFUSERS.length() );
+}
+void  not_on_channel(int sockfd){
+
 }
 
 
+void topic_view(int sockfd,string nickname,string channel_name){
+	
+	for (int i = 1 ;i<all_channels.size();i++){
+		if (channel_name== all_channels[i]->name){
+			string topic_set="";
+			if(all_channels[i]->topic==""){
+				topic_set=":mircd 331 "+nickname+" #"+channel_name+" :No topic is set\r\n";
+			}
+			else{
+				topic_set=":mircd 332  "+nickname+" #"+channel_name+" :"+ all_channels.at(i)->topic+"\r\n";
+	
+			}
+			write(sockfd,topic_set.c_str(),topic_set.length() );
+			break;
+		}
+	}
+}
+void topic_change(int sockfd,string nickname,string channel_name,string topic_name){
+	
+	
+	for (int i = 1 ;i<all_channels.size();i++){
+		if (channel_name== all_channels[i]->name){
+			 
+			all_channels[i]->topic= topic_name;
+			 
+			break;
+		}
+	}
+	topic_view(sockfd ,nickname,channel_name);
+
+}
 
 void split_instructions (string strlist,vector<string>& cmd){
  
@@ -360,12 +441,12 @@ void deal_input(int sockfd ,char* buf,int size ){
 			else{
 				cout<< " nick receive \n" ;
 				map_Name_Ip_and_port[sockfd][0]=arg.at(1);
-				string motd_start=":mircd 375 "+nickname+" :- mircd Message of the day -\r\n";
-				string motd 	= ":mircd 372 "+nickname+" :-  Hello, World!\r\n";
-				string motd_end =":mircd 376 "+nickname+" :End of message of the day\r\n";	
-				write(sockfd, motd_start .c_str(), motd_start.length());
+				 
+				string motd 	= ":mircd 372 "+nickname+" :-  Hello, World! \r\n ";
+			 
+				 
 				write(sockfd, motd .c_str(), motd.length());
-				write(sockfd, motd_end .c_str(), motd_end.length());
+			 
 			}
 			
 			
@@ -430,6 +511,8 @@ void deal_input(int sockfd ,char* buf,int size ){
 		}
 		else if(arg[0]=="USERS" ){
 			send_users(sockfd);
+			
+			
 		}
 		else if (arg[0]=="LIST"){
 			if(arg.size()==1){
@@ -438,11 +521,38 @@ void deal_input(int sockfd ,char* buf,int size ){
 			}
 			else if(arg.size()==2)
 			{
-
+				list_one_channels(sockfd,arg[1].erase(0,1));
 			}
 
 		}
-		
+		else if (arg[0]=="JOIN"){
+				join_channel(sockfd,nickname,arg[1].erase(0,1));
+		}
+		else if (arg[0]=="NAMES"){
+			if(arg.size()==1){
+
+			}
+
+			else if(arg.size()==2)
+				names_channel(sockfd ,arg[1].erase(0,1));
+		}
+		else if (arg[0]=="TOPIC"){
+			 
+			if(arg.size()==2){
+				topic_view(sockfd ,nickname,arg[1].erase(0,1));
+			}
+				
+			else{
+				
+				for (int i = 2 ;i<arg.size(); i++){
+					
+					topic_name =topic_name + " "+ arg.at(i);
+				}
+				
+				topic_change(sockfd ,nickname,arg[1].erase(0,1),topic_name);
+			}
+		 
+		}
 		else {
 			string ERR_UNKNOWNCOMMAND=":mircd 421  "+arg[0]+" :Unknown command\r\n";
 			
