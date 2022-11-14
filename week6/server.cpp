@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <stdarg.h>
+#include<sys/time.h>
 #include <sstream>
 #include <vector>
 #include <map>
@@ -28,6 +29,11 @@
 #define OPEN_MAX 1024
 #define INFTIM -1
 using namespace std;
+
+
+
+map<int, string[2]> map_Name_Ip_and_port;
+
 string date_get(  ){
 	string date_str;
     char buffer[32];
@@ -73,7 +79,7 @@ string get_ip_port(int connfd){
 		}
 	return _ip_port;
 }
-void set_map(int connfd,map<int, string[2]> & map_Name_Ip_and_port){
+void set_map(int connfd){
 	string  ip_port_address = get_ip_port(connfd);
 	string   nickname = random_nick_name();
 	cout<<"* client connected from "<< ip_port_address<<endl;
@@ -85,7 +91,7 @@ void set_map(int connfd,map<int, string[2]> & map_Name_Ip_and_port){
 
 
 }
-void erase_map(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
+void erase_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_Name_Ip_and_port.find(fd);
 	 
@@ -100,7 +106,7 @@ void erase_map(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
 		}
 
 }
-string nick_name_get(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
+string nick_name_get(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_Name_Ip_and_port.find(fd);
 	string name;
@@ -112,7 +118,7 @@ string nick_name_get(int fd,map<int, string[2]> & map_Name_Ip_and_port ){
 	return name;
 }
 //get_online_users();
-void second_message(int connfd,pollfd* client,int maxi,map<int, string[2]> & map_Name_Ip_and_port){
+void second_message(int connfd,pollfd* client,int maxi){
 		int total=0;
 		string nick_name,date_str,s_message;
 
@@ -127,7 +133,7 @@ void second_message(int connfd,pollfd* client,int maxi,map<int, string[2]> & map
 
 
 		date_str=date_get();
-		nick_name=nick_name_get(connfd,map_Name_Ip_and_port);
+		nick_name=nick_name_get(connfd);
 		s_message= date_str + " Total "+to_string(map_Name_Ip_and_port.size())+" users online now. Your name is <"+nick_name+">\n";
 
 		write(connfd,s_message.c_str(), s_message.length());
@@ -166,7 +172,7 @@ void simple_tokenizer(string s,vector<string>& arg)
         cout << word << endl;
     }
 }
-void deal_input(int sockfd ,char* buf,int size,map<int, string[2]> &map_Name_Ip_and_port){
+void deal_input(int sockfd ,char* buf,int size ){
 	string message (buf,size);
 	map<int, string[2]>::iterator iter;
 	string split="--------------------------------------------------\n";
@@ -229,7 +235,7 @@ int main(int argc, char * argv[])
 	socklen_t clilen;
 	struct pollfd client[OPEN_MAX];
 	struct sockaddr_in cliaddr, servaddr;
-	map<int, string[2]> map_Name_Ip_and_port;
+ 
 	setenv("TZ", "GMT-8", 1);
 	tzset();
 	// signal(SIGCHLD,sig_chld);
@@ -316,12 +322,12 @@ int main(int argc, char * argv[])
 			
 			
 			int tmp=connfd;
-			set_map(tmp,map_Name_Ip_and_port);
+			set_map(tmp );
 			
 			 
 			hello_client (tmp );
 
-			second_message( tmp ,client , maxi,map_Name_Ip_and_port);
+			second_message( tmp ,client , maxi );
 
 			if (--nready <= 0) continue; /* no more readable descs */
 		}
@@ -341,13 +347,13 @@ int main(int argc, char * argv[])
 				else if (n == 0) { /* connection closed by client */
 					//printf("client  %i shutdown \n" ,sockfd );
 					int tmp=sockfd;
-					erase_map(tmp,map_Name_Ip_and_port);
+					erase_map(tmp );
 					close(sockfd);
 					client[i].fd = -1;
 				}
 				else{
 					//printf("%s \n",buf);
-					deal_input( sockfd ,buf,n, map_Name_Ip_and_port);
+					deal_input( sockfd ,buf,n );
 					//write(sockfd, buf, n);
 				}
 
