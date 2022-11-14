@@ -21,7 +21,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include "aa.h"
+ 
 #define MAXLINE 500
 #define Animal_Num 889
 #define adj_Num 3434
@@ -58,22 +58,7 @@ string date_get(  ){
 
 	return date_str;
 }
-
-// string random_nick_name(  ){
-// 	time_t now = time(0);
-// 	string name_str;
-//     char buffer[32];
-//    // convert now to string form
-//    	struct tm *Time_now = localtime(&now);
-//     srand ( time(NULL) );
-
-// 	int AniIndex=  random ()%Animal_Num;
-//     int adjIndex = random ()%adj_Num;
-// 	sprintf(buffer,"%s %s",adjs[adjIndex],animals[AniIndex]);
-// 	name_str= buffer;
-// 	return name_str;
-// }
-
+ 
 string get_ip_port(int connfd){
 	uint32_t len=sizeof(SA);
     sockaddr_in get_ip_port;
@@ -102,7 +87,7 @@ void erase_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_Name_Ip_and_port.find(fd);
 	 
-	cout<< "* client"<< iter->second[1] <<" disconnected"<<endl;
+	cout<< iter->first<< "* client" <<" disconnected"<<endl;
 
     map_Name_Ip_and_port.erase(iter);
  
@@ -122,7 +107,7 @@ void erase_sink_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_sink_Name_Ip_and_port.find(fd);
 	 
-	cout<< "* client"<< iter->second[1] <<" disconnected"<<endl;
+	cout<< iter->first << "* client"<<" disconnected"<<endl;
 
     map_sink_Name_Ip_and_port.erase(iter);
  
@@ -177,7 +162,7 @@ void deal_input(int sockfd ,char* buf,int size ){
 		write(sockfd,p_message.c_str(),p_message.length() );
 	}
 	else if (message=="/clients\n"){///change to new map
-		string p_message=date_get()+ " CLIENTS "+ to_string(map_Name_Ip_and_port.size())+"\n";
+		string p_message=date_get()+ " CLIENTS "+ to_string(map_sink_Name_Ip_and_port.size())+"\n";
 	 
 		write(sockfd,p_message.c_str(),p_message.length() );
 	}
@@ -216,14 +201,14 @@ int main(int argc, char * argv[])
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 
 
-	// if (sink_listenfd == -1) {
-	// 	printf("sink_socket creation failed...\n");
-	// 	exit(0);
-	// }
-	// else
-	// 	printf("Socket successfully created..\n");
-	// bzero(&servaddr, sizeof(servaddr));
-	// sink_listenfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sink_listenfd == -1) {
+		printf("sink_socket creation failed...\n");
+		exit(0);
+	}
+	else
+		printf("Socket successfully created..\n");
+	bzero(&servaddr, sizeof(servaddr));
+	sink_listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	// assign IP,
 	uint32_t port =std::atoi(argv[1]) ;
 	servaddr.sin_family = AF_INET;
@@ -231,9 +216,9 @@ int main(int argc, char * argv[])
 	servaddr.sin_port = htons(port);
 
 	 
-	// sink_servaddr.sin_family = AF_INET;
-	// sink_servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	// sink_servaddr.sin_port = htons(port+1);
+	sink_servaddr.sin_family = AF_INET;
+	sink_servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	sink_servaddr.sin_port = htons(port+1);
 
 	// Binding newly created socket to given IP and verification
 	if ((bind(listenfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
@@ -245,13 +230,14 @@ int main(int argc, char * argv[])
 		printf("Socket successfully binded..\n");
 
 
-	// if ((bind(sink_listenfd, (SA*)&sink_servaddr, sizeof(sink_servaddr))) != 0) {
-	// 	perror("bind");
-	// 	printf("sink_socket bind failed...\n");
-	// 	exit(0);
-	// }
-	// else
-	// 	printf("Socket successfully binded..\n");
+	if ((bind(sink_listenfd, (SA*)&sink_servaddr, sizeof(sink_servaddr))) != 0) {
+		perror("bind");
+		printf("sink_socket bind failed...\n");
+		exit(0);
+	}
+	else
+		printf("Socket successfully binded..\n");
+
 	// Now server is ready to listen and verification
 	if ((listen(listenfd, 256)) != 0) {
 		printf("Listen failed...\n");
@@ -263,12 +249,12 @@ int main(int argc, char * argv[])
 
 	//setcokfd rcv buf
 
-	// if ((listen(sink_listenfd, 256)) != 0) {
-	// 	printf("sink_Listen failed...\n");
-	// 	exit(0);
-	// }
-	// else
-	// 	printf("sink_Server listening..\n");
+	if ((listen(sink_listenfd, 256)) != 0) {
+		printf("sink_Listen failed...\n");
+		exit(0);
+	}
+	else
+		printf("sink_Server listening..\n");
 
 
 	// Accept the data packet from client and verification
@@ -277,22 +263,25 @@ int main(int argc, char * argv[])
 
 
 	client[0].fd = listenfd;
+	client[1].fd = sink_listenfd;
+
 	client[0].events = POLLRDNORM;
-	for (i = 1; i < OPEN_MAX; i++)
+	for (i = 2; i < OPEN_MAX; i++)
 		client[i].fd = -1; /* -1: available entry */
 	maxi = 0; /* max index in client[] */
 
 	// sink_client[0].fd = sink_listenfd;
-	// client[0].events = POLLRDNORM;
+	// sink_client[0].events = POLLRDNORM;
 	// for (sink_i = 1; sink_i < OPEN_MAX; sink_i++)
-	// 	client[sink_i].fd = -1; /* -1: available entry */
+	// 	sink_client[sink_i].fd = -1; /* -1: available entry */
 	// sink_maxi = 0; /* max index in client[] */
 
 	for ( ; ; ){
 
 
-
-		//sink_nready=poll(sink_client, sink_maxi+1, INFTIM);
+		cout<<" nready "<<  nready<<endl;
+		
+		
 		nready = poll(client, maxi+1, INFTIM);
 
 		if (client[0].revents & POLLRDNORM) { /* new client */
@@ -307,7 +296,7 @@ int main(int argc, char * argv[])
 			//get_online_users(client,maxi);
 
 			//broadcast_rest_user(coonfd,);
-			for (i = 1; i < OPEN_MAX; i++)
+			for (i = 2; i < OPEN_MAX; i++)
 				if (client[i].fd < 0) {
 				client[i].fd = connfd; /* save descriptor */
 				break;
@@ -333,9 +322,44 @@ int main(int argc, char * argv[])
 
 			if (--nready <= 0) continue; /* no more readable descs */
 		}
+		
+		// cout<<"sink_nready "<< sink_nready<<endl;
+		sink_nready=poll(sink_client, sink_maxi+1, INFTIM);
 
-		
-		
+		if (client[1].revents & POLLRDNORM) { /* new client */
+			printf("server accept the sink_client...\n");
+			sink_clilen = sizeof(sink_cliaddr);
+			sink_connfd = accept(sink_listenfd, (SA *) &sink_cliaddr, &sink_clilen);
+			
+			//
+
+
+ 
+			for (sink_i = 1; sink_i < OPEN_MAX; sink_i++)
+				if (client[sink_i].fd < 0) {
+				client[sink_i].fd = sink_connfd; /* save descriptor */
+				break;
+				}
+			if (i == OPEN_MAX) printf("too many clients");//err_quit("too many clients");
+
+
+
+			client[sink_i].events = POLLRDNORM;
+
+
+
+			if (sink_i > sink_maxi) sink_maxi = sink_i; /* max index in client[] */
+			
+			
+			int tmp=sink_connfd;
+			set_sink_map(tmp );
+			if (--sink_nready <= 0) continue; /* no more readable descs */
+		}
+	
+
+
+
+
 		//printf("start checkinng \n");
 		for (i = 1; i <= maxi; i++) {
 			/* check all clients for data */
@@ -367,45 +391,9 @@ int main(int argc, char * argv[])
 		}
 
 		///sink_server
-		// if (sink_client[0].revents & POLLRDNORM) { /* new client */
-		// 	printf("server accept the sink_client...\n");
-		// 	sink_clilen = sizeof(sink_cliaddr);
-		// 	sink_connfd = accept(sink_listenfd, (SA *) &sink_cliaddr, &sink_clilen);
-			
-		// 	//
-
-
-		// 	// before adding
-		// 	//get_online_users(client,maxi);
-
-		// 	//broadcast_rest_user(coonfd,);
-		// 	for (sink_i = 1; sink_i < OPEN_MAX; sink_i++)
-		// 		if (client[sink_i].fd < 0) {
-		// 		client[sink_i].fd = sink_connfd; /* save descriptor */
-		// 		break;
-		// 		}
-		// 	if (i == OPEN_MAX) printf("too many clients");//err_quit("too many clients");
-
-
-
-		// 	client[sink_i].events = POLLRDNORM;
-
-
-
-		// 	if (sink_i > sink_maxi) sink_maxi = sink_i; /* max index in client[] */
-			
-			
-		// 	int tmp=sink_connfd;
-		// 	set_sink_map(tmp );
-			
-			 
-		// 	// hello_client (tmp );
-
-		// 	// second_message( tmp ,client , maxi );
-
-		// 	if (--sink_nready <= 0) continue; /* no more readable descs */
-		// }
-
+		
+		 	
+		
 		// for (sink_i = 1; sink_i <= sink_maxi; sink_i++) {
 		// 	/* check all clients for data */
 		// 	if ( (sink_sockfd = sink_client[i].fd) < 0) continue;
@@ -426,17 +414,17 @@ int main(int argc, char * argv[])
 		// 			sink_client[i].fd = -1;
 		// 		}
 		// 		else{
-		// 			//printf("%s \n",buf);
+		// 			printf("%s \n",buf);
 		// 			//deal_sink_input( sink_sockfd ,buf,n );
 		// 			counter+=n;
 					
-		// 			//write(sockfd, buf, n);
+		// 			write(sink_sockfd, buf, n);
 		// 		}
 
 		// 		if (--sink_nready <= 0) break; /* no more readable descs */
 		// 	}
 		// }
-		//
+		
 
 
 	}
