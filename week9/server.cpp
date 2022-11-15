@@ -22,9 +22,8 @@
 #include <vector>
 #include <map>
  
-#define MAXLINE 500
-#define Animal_Num 889
-#define adj_Num 3434
+#define MAXLINE 1024
+ 
 #define SA struct sockaddr
 #define OPEN_MAX 1024
 #define INFTIM -1
