@@ -87,7 +87,7 @@ void erase_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_Name_Ip_and_port.find(fd);
 	 
-	cout<< iter->first<< "* client" <<" disconnected"<<endl;
+	cout   <<"* client" <<" disconnected"<<endl;
 
     map_Name_Ip_and_port.erase(iter);
  
@@ -107,7 +107,7 @@ void erase_sink_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_sink_Name_Ip_and_port.find(fd);
 	 
-	cout<< iter->first << "* client"<<" disconnected"<<endl;
+	cout  <<"* client"<<" disconnected"<<endl;
 
     map_sink_Name_Ip_and_port.erase(iter);
  
@@ -321,7 +321,7 @@ int main(int argc, char * argv[])
 			
 		}
 		 
-		if (client[1].revents & POLLRDNORM) { /* new client */
+		else if (client[1].revents & POLLRDNORM) { /* new client */
 			printf("server accept the sink_client...\n");
 			sink_clilen = sizeof(sink_cliaddr);
 			sink_connfd = accept(sink_listenfd, (SA *) &sink_cliaddr, &sink_clilen);
@@ -392,7 +392,7 @@ int main(int argc, char * argv[])
 						}
 					else{
 						counter+=n;
-						cout<<n<<endl;
+						 
 					}
 					//write(sockfd, buf, n);
 				}
