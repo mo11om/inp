@@ -19,7 +19,7 @@ using namespace std;
 vector<int > cmd_data_connections;
 
 
-
+int connection_num=40;
 
 void handler(int s) {
     char buffer[1000] = { 0 };
@@ -27,8 +27,8 @@ void handler(int s) {
 	write(cmd_data_connections.at(0),REPORT.c_str(),REPORT.length());
 	read(cmd_data_connections.at(0), buffer, sizeof(buffer));
     cout<<buffer;
-    for (int i=0;i<cmd_data_connections.size();i++){
-       cout<<(cmd_data_connections.at(i))<<"\n";
+    for (int i=0;i<connection_num;i++){
+        
         close(cmd_data_connections.at(i));
     } 
  	exit(0);
@@ -36,11 +36,12 @@ void handler(int s) {
 
 }
 void send(){
-    char buffer[1000] = { 0 };
+    char buffer[1000] = {0};
+
     while(1) {
-         for (int i=0;i<cmd_data_connections.size();i++) {
-            for (int j=0;j<1000;j++)
-             send(cmd_data_connections.at(i), buffer, 1000, 0);
+         for (int i=1;i<connection_num;i++) {
+         
+             write(cmd_data_connections.at(i), buffer, 500);
          }
 
 		
@@ -72,9 +73,9 @@ int get_new_Data_connect_(string address,uint32_t port){
     
 
     ///set send buffer?
-    //struct sock_opts *ptr;
-	//int rc_buf =1024;
-   	// setsockopt(sock, SOL_SOCKET,SO_SDBUF,&rc_buf,sizeof(rc_buf));
+
+	long rc_buf =10000000 ;
+   	setsockopt(sock, SOL_SOCKET,SO_SNDBUF,&rc_buf,sizeof(rc_buf));
 
 	if ((connect(sock, (sockaddr*)&serv_addr,	sizeof(serv_addr)))) {
 		printf("\nConnection Failed \n");
@@ -115,11 +116,7 @@ int main(int argc, char const* argv[])
     cmd_data_connections.push_back(sock);
 
 
-    string Ping="/ping\n";
-
-    write(sock,Ping.c_str(),Ping.length());
-	read(sock, buffer, sizeof(buffer));
-
+    
 
     string RESET="/reset\n";
 
@@ -127,10 +124,10 @@ int main(int argc, char const* argv[])
 	read(sock, buffer, sizeof(buffer));
     cout<<buffer;
 
-    for (int i=0 ;i<20;i++){
+    for (int i=0 ;i<connection_num;i++){
          client_fd=  get_new_Data_connect_(address,port+1);
     
-    cmd_data_connections.push_back(client_fd);
+        cmd_data_connections.push_back(client_fd);
     }
     
    

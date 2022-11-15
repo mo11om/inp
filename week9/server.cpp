@@ -86,7 +86,7 @@ void erase_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_Name_Ip_and_port.find(fd);
 	 
-	cout   <<"* client" <<" disconnected"<<endl;
+	//cout   <<"* client" <<" disconnected"<<endl;
 
     map_Name_Ip_and_port.erase(iter);
  
@@ -106,7 +106,7 @@ void erase_sink_map(int fd ){
 	map<int, string[2]>::iterator iter;
 	iter = map_sink_Name_Ip_and_port.find(fd);
 	 
-	cout  <<"* client"<<" disconnected"<<endl;
+	//cout  <<"* client"<<" disconnected"<<endl;
 
     map_sink_Name_Ip_and_port.erase(iter);
  
@@ -136,19 +136,20 @@ void deal_input(int sockfd ,char* buf,int size ){
 		reset_time=tv2s(&now);
 		
 		string p_message=to_string(reset_time)+ " RESET "+to_string(counter)+" \n";
-		counter=0;
+		
 		write(sockfd,p_message.c_str(),p_message.length() );
-		 printf("%lf \n",reset_time);
+		counter=0;
+		// printf("%lf \n",reset_time);
 	}
 	else if	(message=="/report\n"){
 		
 		struct timeval _t1;
-		double t0, t1;
+		double t0, t1;t0= reset_time;char buffer[OPEN_MAX]; 
 		gettimeofday(&_t1, NULL);
 	
 		t1 = tv2s(&_t1);
-		t0= reset_time;
-		char buffer[OPEN_MAX]; 
+		
+		
 		sprintf(buffer ,"%lu.%06lu REPORT %llu %.6fs %.6f Mbps\n",
 		_t1.tv_sec, _t1.tv_usec, counter, t1-t0, 8.0*(counter/1000000.0)/(t1-t0) );
 		string p_message =buffer;
@@ -247,8 +248,8 @@ int main(int argc, char * argv[])
 
 
 	//setcokfd rcv buf
-	struct sock_opts *ptr;
-	int rc_buf =1024*1024;
+ 
+	long rc_buf =100000000000;
 	setsockopt(sink_listenfd, SOL_SOCKET,SO_RCVBUF,&rc_buf,sizeof(rc_buf));
 	if ((listen(sink_listenfd, 256)) != 0) {
 		printf("sink_Listen failed...\n");
@@ -287,7 +288,7 @@ int main(int argc, char * argv[])
 		nready = poll(client, maxi+1, INFTIM);
 		 
 		if (client[0].revents & POLLRDNORM) { /* new client */
-			printf("server accept the client...\n");
+			//printf("server accept the client...\n");
 			clilen = sizeof(cliaddr);
 			connfd = accept(listenfd, (SA *) &cliaddr, &clilen);
 			
@@ -323,7 +324,7 @@ int main(int argc, char * argv[])
 		}
 		 
 		else if (client[1].revents & POLLRDNORM) { /* new client */
-			printf("server accept the sink_client...\n");
+			//printf("server accept the sink_client...\n");
 			sink_clilen = sizeof(sink_cliaddr);
 			sink_connfd = accept(sink_listenfd, (SA *) &sink_cliaddr, &sink_clilen);
 			
@@ -368,7 +369,7 @@ int main(int argc, char * argv[])
 						close(sockfd);
 						client[i].fd = -1;
 						}
-					else printf("read error");
+					else printf("read error %d\n",sockfd);
 				}
 				else if (n == 0) { /* connection closed by client */
 					//printf("client  %i shutdown \n" ,sockfd );
