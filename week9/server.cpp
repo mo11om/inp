@@ -264,8 +264,9 @@ int main(int argc, char * argv[])
 
 	client[0].fd = listenfd;
 	client[1].fd = sink_listenfd;
-
+	 
 	client[0].events = POLLRDNORM;
+	client[1].events = POLLRDNORM;
 	for (i = 2; i < OPEN_MAX; i++)
 		client[i].fd = -1; /* -1: available entry */
 	maxi = 0; /* max index in client[] */
@@ -279,11 +280,11 @@ int main(int argc, char * argv[])
 	for ( ; ; ){
 
 
-		cout<<" nready "<<  nready<<endl;
+		 
 		
 		
 		nready = poll(client, maxi+1, INFTIM);
-
+		 
 		if (client[0].revents & POLLRDNORM) { /* new client */
 			printf("server accept the client...\n");
 			clilen = sizeof(cliaddr);
@@ -315,49 +316,44 @@ int main(int argc, char * argv[])
 			int tmp=connfd;
 			set_map(tmp );
 			
-			 
-			// hello_client (tmp );
+			 --nready;
 
-			// second_message( tmp ,client , maxi );
-
-			if (--nready <= 0) continue; /* no more readable descs */
+			
 		}
-		
-		// cout<<"sink_nready "<< sink_nready<<endl;
-		sink_nready=poll(sink_client, sink_maxi+1, INFTIM);
-
+		 
 		if (client[1].revents & POLLRDNORM) { /* new client */
 			printf("server accept the sink_client...\n");
 			sink_clilen = sizeof(sink_cliaddr);
 			sink_connfd = accept(sink_listenfd, (SA *) &sink_cliaddr, &sink_clilen);
 			
 			//
-
+			
 
  
-			for (sink_i = 1; sink_i < OPEN_MAX; sink_i++)
-				if (client[sink_i].fd < 0) {
-				client[sink_i].fd = sink_connfd; /* save descriptor */
+			for (i = 2; i < OPEN_MAX; i++)
+				if (client[i].fd < 0) {
+				client[i].fd = sink_connfd; /* save descriptor */
 				break;
 				}
 			if (i == OPEN_MAX) printf("too many clients");//err_quit("too many clients");
 
 
 
-			client[sink_i].events = POLLRDNORM;
+			client[ i].events = POLLRDNORM;
 
 
 
-			if (sink_i > sink_maxi) sink_maxi = sink_i; /* max index in client[] */
+			if (i > maxi) maxi =  i; /* max index in client[] */
 			
 			
 			int tmp=sink_connfd;
 			set_sink_map(tmp );
-			if (--sink_nready <= 0) continue; /* no more readable descs */
+			 --nready;
+			
 		}
 	
 
-
+		if ( nready<= 0) continue; /* no more readable descs */
 
 
 		//printf("start checkinng \n");
@@ -376,13 +372,28 @@ int main(int argc, char * argv[])
 				else if (n == 0) { /* connection closed by client */
 					//printf("client  %i shutdown \n" ,sockfd );
 					int tmp=sockfd;
-					erase_map(tmp );
+					if (map_sink_Name_Ip_and_port.find(tmp)==map_sink_Name_Ip_and_port.end()){
+						erase_map(tmp );
+						
+					}
+					else{
+						erase_sink_map(tmp);
+					}
 					close(sockfd);
 					client[i].fd = -1;
 				}
 				else{
 					//printf("%s \n",buf);
-					deal_input( sockfd ,buf,n );
+					int tmp=sockfd;
+
+					if (map_sink_Name_Ip_and_port.find(tmp)==map_sink_Name_Ip_and_port.end()){
+
+						deal_input( sockfd ,buf,n );
+						}
+					else{
+						counter+=n;
+						cout<<n<<endl;
+					}
 					//write(sockfd, buf, n);
 				}
 
