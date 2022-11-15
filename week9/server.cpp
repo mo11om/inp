@@ -248,7 +248,9 @@ int main(int argc, char * argv[])
 
 
 	//setcokfd rcv buf
-
+	struct sock_opts *ptr;
+	int rc_buf =1024;
+	setsockopt(sink_listenfd, SOL_SOCKET,SO_RCVBUF,&rc_buf,sizeof(rc_buf));
 	if ((listen(sink_listenfd, 256)) != 0) {
 		printf("sink_Listen failed...\n");
 		exit(0);
