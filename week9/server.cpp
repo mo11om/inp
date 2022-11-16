@@ -359,7 +359,7 @@ int main(int argc, char * argv[])
 
 
 		//printf("start checkinng \n");
-		for (i = 1; i <= maxi; i++) {
+		for (i = 2; i <= maxi; i++) {
 			/* check all clients for data */
 			if ( (sockfd = client[i].fd) < 0) continue;
 			if (client[i].revents & (POLLRDNORM | POLL_ERR)) {
