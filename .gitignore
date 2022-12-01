@@ -17,3 +17,6 @@ week6/test.sh
 week9/client
 week9/send
 week9/test
+week10/*.o
+*.pdf
+*.zip
