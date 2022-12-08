@@ -20,3 +20,11 @@ week9/test
 week10/*.o
 *.pdf
 *.zip
+lab8/receive/ 
+lab8/sendto/ 
+*.o
+lab8/*.sh
+
+
+lab8/udpping*
+lab8/udpechosrv
