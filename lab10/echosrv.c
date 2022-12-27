@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	memset(&sin, 0, sizeof(sin));
 
 
-	printf("server br %s \n",argv[argc-1]);
+	printf("path %s %s %s\n",argv[argc-3] ,argv[argc-2] ,argv[argc-1]);
 	// sin.sin_family = AF_INET;
 	// sin.sin_port = htons(strtol(argv[argc-1], NULL, 0));
 

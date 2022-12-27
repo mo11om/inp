@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 	if(inet_pton(AF_INET, argv[argc-1], &sin.sin_addr) != 1) {
 		return -fprintf(stderr, "** cannot convert IPv4 address for %s\n", argv[1]);
 	}
-	printf("path%s %s %s\n",argv[argc-3] ,argv[argc-2] ,argv[argc-1]);
+	printf("path %s %s %s\n",argv[argc-3] ,argv[argc-2] ,argv[argc-1]);
 	
 	 
 	if((s = socket(AF_INET, SOCK_RAW, 161)) < 0)
