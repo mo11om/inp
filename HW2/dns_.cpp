@@ -106,7 +106,7 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
  
 	struct QUESTION *qinfo = NULL;
 	struct QUESTION *new_qinfo = new QUESTION;
-	 struct RES_RECORD *ans=new RES_RECORD  ;
+
 	unsigned char*qname={};
 	unsigned char*new_qname={};
 
@@ -162,35 +162,40 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 
 
 	//ans 
-
+	struct RES_RECORD *ans=new RES_RECORD  ;
 	ans->resource=new R_DATA; 
 	//char start="\x08";
-	unsigned char *dns_format=new unsigned  char[64],  test[]=".example1.org\0",A[]="140.113.80.1";
+	unsigned char *dns_format=new unsigned  char[64],  test[]="\x09.example1\x03org\0",A[]="140.113.80.1";
 	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
 	
 	
 	//ChangetoDnsNameFormat(dns_format,test);
-	memcpy(ans->name,qname,strlen( (const char*)qname)+1);
-	 
-
-	ChangetoDnsNameFormat(dns_format,A);	printf("%s \n",test);
-	memcpy(ans->rdata,dns_format,strlen((const char*)dns_format));
-	
+	//ChangetoDnsNameFormat(dns_format,test); 
+	memcpy(ans->name,test,strlen( (const char*)test));
+                                         
+	 uint32_t ip_A=0;
+	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
  
 
-	ans->resource->type =T_A;
-	ans->resource->ttl=3600;
-	ans->resource->_class=1;
-	ans->resource->data_len=strlen((const char*)ans ->rdata);
-		
-	unsigned short zero=0;
-	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name)); 
-	stop+=strlen((const char*)ans ->name);
+	ans->resource->type =T_A;ans->resource->_class=1;
+	ans->resource->ttl=   (3600);
+	
+	ans->resource->data_len=sizeof(uint32_t);
 	 
-	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
-	stop+=sizeof(R_DATA);
-	memcpy(&send_buf[stop],ans->rdata,strlen((const char*)ans ->rdata) );
+		
+	//name
+	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name) ); 
 	stop+=strlen((const char*)ans ->name) ;
+	 //zero
+	short zero =0;
+	memcpy(&send_buf[stop],&zero,sizeof(short) ); 
+	stop+= sizeof(short) ;
+	//R=DATA
+	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
+	stop+=sizeof(R_DATA)-1;
+
+	memcpy(&send_buf[stop], &ip_A,sizeof(uint32_t)  );
+	stop+= sizeof(uint32_t) ;
 
 	//get root
 
@@ -215,7 +220,7 @@ void  foreign( int cs,char sbuf[],int slen,struct sockaddr_in csin) {
 	char buf[65536]={};struct sockaddr_in dest;
 
 	int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); //UDP packet for DNS queries
-	char array[]="8.8.8.8";
+	char array[]="208.67.222.222";
 	get_dns_servers(array);
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons(53);
@@ -324,4 +329,5 @@ void ChangetoDnsNameFormat(unsigned char* dns, unsigned char* host) {
 		}
 	}
 	*dns++ = '\0';
+	printf("dns %s  char \n",dns);
 }

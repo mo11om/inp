@@ -46,8 +46,8 @@ struct QUESTION {
 #pragma pack(push, 1)
 struct R_DATA {
 	unsigned short type;
-	unsigned short _class;
-	unsigned int ttl;
+	unsigned short _class:1;
+	int ttl;
 	unsigned short data_len;
 };
 #pragma pack(pop)
