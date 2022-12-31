@@ -43,11 +43,13 @@ struct QUESTION {
 };
 
 //Constant sized fields of the resource record structure
-#pragma pack(push, 1)
+#pragma pack(push,2)
 struct R_DATA {
+	 
 	unsigned short type;
 	unsigned short _class:1;
-	int ttl;
+ 
+	unsigned int ttl;
 	unsigned short data_len;
 };
 #pragma pack(pop)
@@ -55,6 +57,7 @@ struct R_DATA {
 //Pointers to resource record contents
 struct RES_RECORD {
 	unsigned char *name;
+	
 	struct R_DATA *resource;
 	unsigned char *rdata;
 };

@@ -3,6 +3,7 @@
 //Dated : 29/4/2009
 
 //Header Files
+
 #include<stdio.h> //printf
 #include<string.h>    //strlen
 #include<stdlib.h>    //malloc
@@ -10,7 +11,7 @@
 #include<arpa/inet.h> //inet_addr , inet_ntoa , ntohs etc
 #include<netinet/in.h>
 #include<unistd.h>    //getpid
-
+ 
 //List of DNS Servers registered on the system
 char dns_servers[10][100];
 int dns_server_count = 0;
@@ -62,7 +63,8 @@ struct QUESTION {
 struct R_DATA {
 	unsigned short type;
 	unsigned short _class;
-	unsigned int ttl;
+ 
+	int ttl;
 	unsigned short data_len;
 };
 #pragma pack(pop)
@@ -171,28 +173,28 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
 	//ChangetoDnsNameFormat(dns_format,test);
 	//ChangetoDnsNameFormat(dns_format,test); 
-	memcpy(ans->name,test,strlen( (const char*)test));
+	memcpy(ans->name,test,strlen( (const char*)test)+1);
                                          
 	 uint32_t ip_A=0;
 	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
  
 
-	ans->resource->type =T_A;ans->resource->_class=1;
-	ans->resource->ttl=   (3600);
+	ans->resource->type =htons(T_A);ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(36);
 	
-	ans->resource->data_len=sizeof(uint32_t);
+	ans->resource->data_len= htons(sizeof(uint32_t));
 	 
 		
 	//name
 	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name) ); 
 	stop+=strlen((const char*)ans ->name) ;
-	 //zero
-	short zero =0;
-	memcpy(&send_buf[stop],&zero,sizeof(short) ); 
-	stop+= sizeof(short) ;
+	// zero
+	char zero ='\0';
+	memcpy(&send_buf[stop],&zero,sizeof(char) ); 
+	stop+= sizeof(char) ;
 	//R=DATA
 	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
-	stop+=sizeof(R_DATA)-1;
+	stop+=sizeof(R_DATA) ;
 
 	memcpy(&send_buf[stop], &ip_A,sizeof(uint32_t)  );
 	stop+= sizeof(uint32_t) ;
@@ -200,8 +202,8 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	//get root
 
 	
-	memcpy(&send_buf[stop],root,24);
-	stop+=24;
+	memcpy(&send_buf[stop],root,23);
+	stop+=23;
 
 	printf("\nSending Packet...");
 	if (sendto(s, (char*) send_buf,
