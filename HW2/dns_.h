@@ -9,7 +9,7 @@
 #define T_MX 15 //Mail server
 
 //Function Prototypes
-void ngethostbyname(unsigned char*, int);
+void  foreign( int cs,char buf[],int slen,struct sockaddr_in csin);
 void ChangetoDnsNameFormat(unsigned char*, unsigned char*);
 unsigned char* ReadName(unsigned char*, unsigned char*, int*);
 void get_dns_servers();
