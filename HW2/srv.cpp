@@ -36,51 +36,31 @@ int main(int argc, char *argv[]) {
 	while(1) {
 		struct sockaddr_in csin;
 		socklen_t csinlen = sizeof(csin);
-		unsigned char  *qname, *reader;
 		char buf[MAX];
-		struct  DNS_HEADER *dns = NULL;
-		struct QUESTION *qinfo = NULL;
-		struct RES_RECORD *ans =new RES_RECORD;
-		char root[23]; 
-		int rlen;
+
+		unsigned char *name ;unsigned short qtype;
 		
+	
+		int rlen;
 		if((rlen = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*) &csin, &csinlen)) < 0) {
 			perror("recvfrom");
 			break;
 		}
 		
+		//fix question
+		unsigned char* qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
+ 		struct QUESTION* qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
+			+ (strlen((const char*) qname) + 1)];
+		//get name and type
+		name= get_qname( buf  , qname );qtype=ntohs(qinfo->qtype);
+		printf("name %s \n",name);
+		//find 
+
+ 		send_dns(s,buf,csin);
 		//foreign(s,buf,rlen,csin)	; 
-		 send_dns(s,buf,csin);
+		
 	
-	// 	// reader = &buf[sizeof(struct DNS_HEADER) + (strlen((const char*) qname) + 1)
-	// 	// 	+ sizeof(struct QUESTION)];
-	// 	qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
-	// 	qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
-	// 		+ (strlen((const char*) qname) + 1)];
-	// 	ans=(struct RES_RECORD*) &buf[sizeof(struct DNS_HEADER)
-	// 		+ (strlen((const char*) qname) + 1)
-	// 		+ sizeof( struct QUESTION)];
-	// 	memcpy(&buf[sizeof(struct DNS_HEADER)
-	// 		+ (strlen((const char*) qname) + 1)
-	// 		+ sizeof(struct QUESTION)], 
-	// 		root,23
-	// 		);
-			
-	// 	dns->qr=1;
-	// 	dns->aa=1;
-	// 	dns->ra=1;
-	// 	dns->ad=0;
-	// 	dns->rcode=0;
-	// 	printf("\nThe response contains : ");
-	// printf("\n %d Questions.", ntohs(dns->q_count));
-	// printf("\n %d Answers.", ntohs(dns->ans_count));
-	// printf("\n %d Authoritative Servers.", ntohs(dns->auth_count));
-	// printf("\n %d Additional records. ", ntohs(dns->add_count));
-	// printf("\n qname %s  length %ld  ", qname,strlen( (const char*)qname));
-	// printf("\n qtype %d  ",ntohs( qinfo->qtype));
-	// printf("\n qclass %d \n\n", ntohs(qinfo->qclass));
-		 
-		//  own_dns(qname);
+	 
 		
 		//sendto(s, buf, rlen, 0, (struct sockaddr*) &csin, sizeof(csin));
 		 

@@ -131,7 +131,7 @@ unsigned char* get_qname(char buf[],unsigned char* qname )
 {
 	int what;unsigned char* name ;
 	name= ReadName(qname,(unsigned char *)&buf,&what);
-	printf("qname %s \n",name);
+ 
 	return name;
 }
 void modify_dns( char send_buf[],int ans_count,int auth_count,int add_count){
@@ -192,7 +192,7 @@ void A_type_RR(char* send_buf, int &stop,unsigned char test[],unsigned char A[],
 
 void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
-	int stop=0; unsigned short qclass;
+	int stop=0; unsigned short qtype;
 	char    root[24],send_buf[65536];root[23]='\0';
 	unsigned char *name ;
 	//fix question
@@ -202,22 +202,15 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
 	//initial copy header and get root
 	Header_question_in(  buf ,  send_buf ,  stop,   root  );
-	//get name 
-	name= get_qname( buf  , qname );
-
-	//get type
-	qclass=ntohs(qinfo->qclass);
-
-	printf("%s %d\n",name,qclass);
-	//modify dns
-	
-	modify_dns(send_buf,1,0,0);
 	 
- 
 
-	//ans
-	unsigned  char  rr_name[]="example1.org",ip_A[]="140.113.80.1";
-	A_type_RR( send_buf,  stop,rr_name,ip_A,3600);
+	 
+	//modify dns
+	 
+	modify_dns(send_buf,1,0,0);
+		//ans
+		unsigned  char  rr_name[]="example1.org",ip_A[]="140.113.80.1";
+		A_type_RR( send_buf,  stop,rr_name,ip_A,3600);
 	
 	//set root
 
