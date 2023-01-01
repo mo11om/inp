@@ -10,7 +10,7 @@
 #include<sys/socket.h>    //you know what this is for
 #include<arpa/inet.h> //inet_addr , inet_ntoa , ntohs etc
 #include<netinet/in.h>
-#include<unistd.h>    //getpid
+
  
 //List of DNS Servers registered on the system
 char dns_servers[10][100];
@@ -235,8 +235,8 @@ void  foreign( int cs,char sbuf[],int slen,struct sockaddr_in csin) {
 	char buf[65536]={};struct sockaddr_in dest;
 
 	int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); //UDP packet for DNS queries
-	char array[]="208.67.222.222";
-	get_dns_servers(array);
+	// char array[]="208.67.222.222";
+	// get_dns_servers(array);
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons(53);
 	dest.sin_addr.s_addr = inet_addr(dns_servers[0]); //dns servers
@@ -327,6 +327,7 @@ void get_dns_servers(char array[]) {
 	 
 
 	strcpy(dns_servers[0], array);
+	printf("dns server %s\n ",dns_servers[0]);
 	// strcpy(dns_servers[1], "208.67.220.220");
 }
 

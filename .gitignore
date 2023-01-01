@@ -28,4 +28,5 @@ lab8/*.sh
 
 lab8/udpping*
 lab8/udpechosrv
-HW2/ref.pcap
+HW2/*.pcap
+HW2/*.txt

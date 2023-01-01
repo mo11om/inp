@@ -24,6 +24,7 @@ using namespace std;
  
 //define  all store zone
 map<string, vector<vector <string>>>all_dns_record;
+string dns_server;
 // vector<map<string,vector <string>>> zone_list;
 
 const std::vector<std::string> split(const std::string& str, const std::string& pattern) {
@@ -91,8 +92,12 @@ vector<vector<string>> get_file_split_res(const char* file_name ){
 void print_ALL(vector<vector <string>>Zone){
     for(int i =0  ;i<Zone.size();i++){
         
-        for (int j =0  ;j<Zone.at(i).size();j++)
+        for (int j =0  ;j<Zone.at(i).size();j++){
+            if(Zone.at(i).at(j)=="@")Zone.at(i).at(j)=".";
             cout<< Zone.at(i).at(j)<<" ";
+
+        }
+            
             cout<<endl;
     }
 }
@@ -101,8 +106,7 @@ void get_total(char* file_name ){
     vector<vector <string>>Zone;
     Config=get_file_split_res(file_name);
 
-     
-
+     dns_server= Config[0][0];
  
     print_ALL(Config);
     for(int i =1  ;i<Config.size();i++){
@@ -115,18 +119,39 @@ void get_total(char* file_name ){
         
       
         all_dns_record[Config.at(i).at(0)]=record;
-        cout<<"\n new \n";cout<<Config.at(i).at(0)<<endl;
-        print_ALL(all_dns_record[Config.at(i).at(0)]);
+        cout<<"\n  \n";cout<<Config.at(i).at(0)<<endl;
+        print_ALL(all_dns_record[ Config.at(i).at(0)]);
     }
 
 
     
     
 }
+vector<vector<string>> check_in_config(char name[]){
+    string  check= name;
+    map<string, vector<vector <string>>>::iterator it;
+    for (it=all_dns_record.begin(); it!=all_dns_record.end();it++){
+        if (check.find(it->first) != std::string::npos) {
+                std::cout << "found!" << '\n';
 
-
-
-int main(int argc, char *argv[]) {
-   
-    get_total(argv[argc-1]);
+                return it->second;
+            }
+    }
+   vector<vector <string>>  found;
+    return   found;
 }
+
+ char * get_config_server(){
+
+    char* arr= new char[256]; 
+    strcpy(arr, dns_server.c_str() ); 
+    return arr;
+}
+
+
+// int main(int argc, char *argv[]) {
+   
+//     get_total(argv[argc-2]);
+//     vector<vector<string>>res=   check_in_config(argv[argc-1]);
+//     if (!res.size()) cout<<"not found \n";
+// }

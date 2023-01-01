@@ -12,7 +12,7 @@
 void foreign( int cs,char buf[],int slen,struct sockaddr_in csin);
 void ChangetoDnsNameFormat(unsigned char*, unsigned char*);
 unsigned char* ReadName(unsigned char*, unsigned char*, int*);
-void get_dns_servers();
+void get_dns_servers(char* array);
 void send_dns(int s,  char   buf[] ,struct sockaddr_in dest);
 unsigned char* get_qname(char buf[],unsigned char* qname );
 //DNS header structure
