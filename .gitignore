@@ -1,4 +1,4 @@
-
+*.pcap
 .vscode/settings.json
 lab3/testcase0.pak
 lab3/.vscode/c_cpp_properties.json
@@ -28,3 +28,4 @@ lab8/*.sh
 
 lab8/udpping*
 lab8/udpechosrv
+HW2/ref.pcap

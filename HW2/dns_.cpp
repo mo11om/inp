@@ -104,42 +104,28 @@ typedef struct {
 void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
 	struct DNS_HEADER *dns  = NULL;
-	struct DNS_HEADER *new_dns  =new DNS_HEADER;
+ 
  
 	struct QUESTION *qinfo = NULL;
-	struct QUESTION *new_qinfo = new QUESTION;
-
+	 
 	unsigned char*qname={};
-	unsigned char*new_qname={};
+ 
 
 	char   root[24],send_buf[65536];root[23]='\0';
 	int stop=0;
 	
-	
-	
-	
-	
-
-
-	
-	// char buf[65536];
-	//Set the DNS structure to standard queries
-	
-	 
-	// dns->q_count = 1; //we have only 1 question
-	// dns->ans_count =  0;
-	// dns->auth_count = 0;
-	// dns->add_count =  0;
-
-	 
-	//point to the query portion
  
-	int what;unsigned char* name ;
+	//Set the DNS structure to standard queries
+	 
+	
 	 
 	qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
 	qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
 			+ (strlen((const char*) qname) + 1)];
-	 name= ReadName(qname,(unsigned char *)&buf,&what);
+	
+	
+	int what;unsigned char* name ;
+	name= ReadName(qname,(unsigned char *)&buf,&what);
 	printf("qname %s \n",name);
 	 
  
@@ -148,7 +134,7 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	memcpy(send_buf,buf,stop);
 	memcpy(root,&buf[stop],24);
 	
-	
+	//modify dns
 	dns = (struct DNS_HEADER *) &send_buf;
 	dns->qr=1;	dns->aa=1;	 dns->ad=0;	dns->rcode=0;
 	dns->ans_count =htons(1);dns->add_count =htons(1);
@@ -190,9 +176,7 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name)+1 ); 
 	stop+=strlen((const char*)ans ->name)+1 ;
 	// zero
-	// char zero ='\0';
-	// memcpy(&send_buf[stop],&zero,sizeof(char) ); 
-	// stop+= sizeof(char) ;
+	 
 	//R=DATA
 	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
 	stop+=sizeof(R_DATA) ;
@@ -205,7 +189,7 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
 	memcpy(&send_buf[stop],root,23);
 	stop+=23;
-
+//send back
 	printf("\nSending Packet...");
 	if (sendto(s, (char*) send_buf,
 			stop, 0, (struct sockaddr*) &dest,
