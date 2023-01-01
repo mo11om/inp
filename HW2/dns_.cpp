@@ -101,20 +101,14 @@ typedef struct {
 /*
  * Perform a DNS query by sending a packet
  * */
-void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
+void Header_question_in(char buf[],char send_buf[],int& stop, char root[]){
 	
-	struct DNS_HEADER *dns  = NULL;
  
  
 	struct QUESTION *qinfo = NULL;
 	 
 	unsigned char*qname={};
- 
 
-	char   root[24],send_buf[65536];root[23]='\0';
-	int stop=0;
-	
- 
 	//Set the DNS structure to standard queries
 	 
 	
@@ -123,55 +117,41 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
 			+ (strlen((const char*) qname) + 1)];
 	
+	printf ("qname %s \n",qname);
 	
-	int what;unsigned char* name ;
-	name= ReadName(qname,(unsigned char *)&buf,&what);
-	printf("qname %s \n",name);
 	 
  
 	 
 	stop =  sizeof(QUESTION)+ sizeof(struct DNS_HEADER)+strlen((const char*)qname)+1; 
 	memcpy(send_buf,buf,stop);
-	memcpy(root,&buf[stop],24);
-	
-	//modify dns
-	dns = (struct DNS_HEADER *) &send_buf;
-	dns->qr=1;	dns->aa=1;	 dns->ad=0;	dns->rcode=0;
-	dns->ans_count =htons(1);dns->add_count =htons(1);
- 
-	// printf("\nThe response contains : ");
-	// printf("\n %d Questions.",  ntohs(dns->q_count));
-	// printf("\n %d Answers.", ntohs(dns->ans_count));
-	// printf("\n %d Authoritative Servers.", ntohs(dns->auth_count));
-	// printf("\n %d Additional records. ", ntohs(dns->add_count));
-	// printf("\n qname %s  length %ld  ", qname,strlen( (const char*)qname));
-	// printf("\n qtype %d  ",ntohs( qinfo->qtype));
-	// printf("\n qclass %d \n\n", ntohs(qinfo->qclass));
-		 	
-
-
-	//ans 
-	struct RES_RECORD *ans=new RES_RECORD  ;
-	ans->resource=new R_DATA; 
-	//char start="\x08";
-	unsigned char *dns_format=new unsigned  char[64],  test[]="example1.org",A[]="140.113.80.1";
-	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
-	
-	   
-	//ChangetoDnsNameFormat(dns_format,test);
-	ChangetoDnsNameFormat(ans->name,test); 
-	//memcpy(ans->name,test,strlen( (const char*)test)+1);
-                                         
-	 uint32_t ip_A=0;
-	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
- 
-
-	ans->resource->type =htons(T_A);ans->resource->_class=htons(1);
-	ans->resource->ttl=   ntohl(36);
-	
-	ans->resource->data_len= htons(sizeof(uint32_t));
+	memcpy(root,&buf[stop],23);
 	 
-		
+} 
+unsigned char* get_qname(char buf[],unsigned char* qname )
+{
+	int what;unsigned char* name ;
+	name= ReadName(qname,(unsigned char *)&buf,&what);
+	printf("qname %s \n",name);
+	return name;
+}
+void modify_dns( char send_buf[],int ans_count,int auth_count,int add_count){
+	
+	struct DNS_HEADER * dns=NULL;
+	dns = (struct DNS_HEADER *) send_buf;
+	
+	printf(" modify dns");
+	dns->qr=1;	dns->aa=1;	 dns->ad=0;	dns->rcode=0;
+
+	dns->ans_count =htons(ans_count);
+	dns->auth_count=htons(auth_count);
+	dns->add_count =htons(add_count+ 1);
+}
+void RR_copy_in_(char send_buf[],int& stop,RES_RECORD* ans ){
+	/*
+	 copy in send
+	*/
+	
+	 
 	//name
 	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name)+1 ); 
 	stop+=strlen((const char*)ans ->name)+1 ;
@@ -180,11 +160,66 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	//R=DATA
 	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
 	stop+=sizeof(R_DATA) ;
+ 
 
-	memcpy(&send_buf[stop], &ip_A,sizeof(uint32_t)  );
-	stop+= sizeof(uint32_t) ;
+	memcpy(&send_buf[stop], ans->rdata,ntohs(ans->resource->data_len ) );
+	stop+= ntohs(ans->resource->data_len)  ;
 
-	//get root
+}
+void A_type_RR(char* send_buf, int &stop,unsigned char test[],unsigned char A[],int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	ans->resource=new R_DATA; 
+	unsigned char *dns_format=new unsigned  char[64]; 
+	// test[]="example1.org",A[]="140.113.80.1";
+	//ans name
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	uint32_t ip_A=0;
+	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
+	memcpy(ans->rdata,&ip_A,sizeof(uint32_t));
+	
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_A);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(sizeof(uint32_t));
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
+
+void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
+	
+	int stop=0; unsigned short qclass;
+	char    root[24],send_buf[65536];root[23]='\0';
+	unsigned char *name ;
+	//fix question
+	unsigned char* qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
+	struct QUESTION* qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
+			+ (strlen((const char*) qname) + 1)];
+	
+	//initial copy header and get root
+	Header_question_in(  buf ,  send_buf ,  stop,   root  );
+	//get name 
+	name= get_qname( buf  , qname );
+
+	//get type
+	qclass=ntohs(qinfo->qclass);
+
+	printf("%s %d\n",name,qclass);
+	//modify dns
+	
+	modify_dns(send_buf,1,0,0);
+	 
+ 
+
+	//ans
+	unsigned  char  rr_name[]="example1.org",ip_A[]="140.113.80.1";
+	A_type_RR( send_buf,  stop,rr_name,ip_A,3600);
+	
+	//set root
 
 	
 	memcpy(&send_buf[stop],root,23);
