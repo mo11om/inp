@@ -167,13 +167,13 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	struct RES_RECORD *ans=new RES_RECORD  ;
 	ans->resource=new R_DATA; 
 	//char start="\x08";
-	unsigned char *dns_format=new unsigned  char[64],  test[]="\x09.example1\x03org\0",A[]="140.113.80.1";
+	unsigned char *dns_format=new unsigned  char[64],  test[]="example1.org",A[]="140.113.80.1";
 	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
 	
-	
+	   
 	//ChangetoDnsNameFormat(dns_format,test);
-	//ChangetoDnsNameFormat(dns_format,test); 
-	memcpy(ans->name,test,strlen( (const char*)test)+1);
+	ChangetoDnsNameFormat(ans->name,test); 
+	//memcpy(ans->name,test,strlen( (const char*)test)+1);
                                          
 	 uint32_t ip_A=0;
 	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
