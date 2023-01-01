@@ -134,12 +134,13 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	 
 	//point to the query portion
  
-	
+	int what;unsigned char* name ;
 	 
 	qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
 	qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
 			+ (strlen((const char*) qname) + 1)];
-	
+	 name= ReadName(qname,(unsigned char *)&buf,&what);
+	printf("qname %s \n",name);
 	 
  
 	 
@@ -152,14 +153,14 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	dns->qr=1;	dns->aa=1;	 dns->ad=0;	dns->rcode=0;
 	dns->ans_count =htons(1);dns->add_count =htons(1);
  
-	printf("\nThe response contains : ");
-	printf("\n %d Questions.",  ntohs(dns->q_count));
-	printf("\n %d Answers.", ntohs(dns->ans_count));
-	printf("\n %d Authoritative Servers.", ntohs(dns->auth_count));
-	printf("\n %d Additional records. ", ntohs(dns->add_count));
-	printf("\n qname %s  length %ld  ", qname,strlen( (const char*)qname));
-	printf("\n qtype %d  ",ntohs( qinfo->qtype));
-	printf("\n qclass %d \n\n", ntohs(qinfo->qclass));
+	// printf("\nThe response contains : ");
+	// printf("\n %d Questions.",  ntohs(dns->q_count));
+	// printf("\n %d Answers.", ntohs(dns->ans_count));
+	// printf("\n %d Authoritative Servers.", ntohs(dns->auth_count));
+	// printf("\n %d Additional records. ", ntohs(dns->add_count));
+	// printf("\n qname %s  length %ld  ", qname,strlen( (const char*)qname));
+	// printf("\n qtype %d  ",ntohs( qinfo->qtype));
+	// printf("\n qclass %d \n\n", ntohs(qinfo->qclass));
 		 	
 
 
@@ -255,10 +256,14 @@ void  foreign( int cs,char sbuf[],int slen,struct sockaddr_in csin) {
  
 }
 
+
+//slice question
+
+
 /*
  *
  * */
-u_char* ReadName(unsigned char* reader, unsigned char* buffer, int* count) {
+unsigned  char* ReadName(unsigned char* reader, unsigned char* buffer, int* count) {
 	unsigned char *name;
 	unsigned int p = 0, jumped = 0, offset;
 	int i, j;
@@ -299,7 +304,7 @@ u_char* ReadName(unsigned char* reader, unsigned char* buffer, int* count) {
 		}
 		name[i] = '.';
 	}
-	name[i - 1] = '\0'; //remove the last dot
+	//name[i - 1] = '\0'; //remove the last dot
 	return name;
 }
 
@@ -331,5 +336,5 @@ void ChangetoDnsNameFormat(unsigned char* dns, unsigned char* host) {
 		}
 	}
 	*dns++ = '\0';
-	printf("dns %s  char \n",dns);
+	 
 }
