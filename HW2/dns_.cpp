@@ -187,12 +187,12 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	 
 		
 	//name
-	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name) ); 
-	stop+=strlen((const char*)ans ->name) ;
+	memcpy(&send_buf[stop],ans->name,strlen((const char*)ans ->name)+1 ); 
+	stop+=strlen((const char*)ans ->name)+1 ;
 	// zero
-	char zero ='\0';
-	memcpy(&send_buf[stop],&zero,sizeof(char) ); 
-	stop+= sizeof(char) ;
+	// char zero ='\0';
+	// memcpy(&send_buf[stop],&zero,sizeof(char) ); 
+	// stop+= sizeof(char) ;
 	//R=DATA
 	memcpy(&send_buf[stop],ans->resource,sizeof(R_DATA));
 	stop+=sizeof(R_DATA) ;
@@ -336,5 +336,6 @@ void ChangetoDnsNameFormat(unsigned char* dns, unsigned char* host) {
 		}
 	}
 	*dns++ = '\0';
+	 
 	 
 }
