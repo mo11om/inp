@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
 
 	if(bind(s, (struct sockaddr*) &sin, sizeof(sin)) < 0)
 		err_quit("bind");
-
+	//read  config
+	get_total(argv[argc-1]); printf("server %s \n",get_config_server()); get_dns_servers(get_config_server());
 	while(1) {
 		struct sockaddr_in csin;
 		socklen_t csinlen = sizeof(csin);
@@ -64,8 +65,8 @@ int main(int argc, char *argv[]) {
 		printf("name %s %d\n",name,qtype);
 		//find 
 
-		get_total(argv[argc-1]); printf("server %s \n",get_config_server()); get_dns_servers(get_config_server());
-		vector<vector<string>>res=   check_in_config(argv[argc-1]);
+		
+		vector<vector<string>>res=   check_in_config( name,qtype);
 		if (!res.size()){
 			
 			 cout<<"not found \n";
@@ -73,8 +74,7 @@ int main(int argc, char *argv[]) {
 			}
 
 		//send
-
- 		send_dns(s,buf,csin);
+		else send_dns(s,buf,csin);
 		//	; 
 		
 	

@@ -127,8 +127,9 @@ void get_total(char* file_name ){
     
     
 }
-vector<vector<string>> check_in_config(char name[]){
-    string  check= name;
+vector<vector<string>> check_in_config(unsigned char name[],unsigned short qtype){
+    string  check ( reinterpret_cast< char const* >(name) ) ;
+    cout<<"check "<< name<<endl;
     map<string, vector<vector <string>>>::iterator it;
     for (it=all_dns_record.begin(); it!=all_dns_record.end();it++){
         if (check.find(it->first) != std::string::npos) {
