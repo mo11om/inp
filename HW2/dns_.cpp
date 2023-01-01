@@ -117,7 +117,7 @@ void Header_question_in(char buf[],char send_buf[],int& stop, char root[]){
 	qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
 			+ (strlen((const char*) qname) + 1)];
 	
-	printf ("qname %s \n",qname);
+ 
 	
 	 
  
@@ -139,7 +139,7 @@ void modify_dns( char send_buf[],int ans_count,int auth_count,int add_count){
 	struct DNS_HEADER * dns=NULL;
 	dns = (struct DNS_HEADER *) send_buf;
 	
-	printf(" modify dns");
+	 
 	dns->qr=1;	dns->aa=1;	 dns->ad=0;	dns->rcode=0;
 
 	dns->ans_count =htons(ans_count);

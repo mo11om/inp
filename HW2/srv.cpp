@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 			+ (strlen((const char*) qname) + 1)];
 		//get name and type
 		name= get_qname( buf  , qname );qtype=ntohs(qinfo->qtype);
-		printf("name %s \n",name);
+		printf("name %s %d\n",name,qtype);
 		//find 
 
  		send_dns(s,buf,csin);
