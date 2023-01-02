@@ -233,14 +233,14 @@ void AAAA_type_RR(char* send_buf, int &stop,unsigned char test[],string A,int tt
 	 
 	char ip_A[16] ;
 	inet_pton( AF_INET6,A.c_str(),(void*)&ip_A);
-	memcpy(ans->rdata,&ip_A,128);
+	memcpy(ans->rdata,&ip_A,16);
 	
 	
 	//R-DATA-resource
 	ans->resource->type =htons(T_AAAA);
 	ans->resource->_class=htons(1);
 	ans->resource->ttl=   ntohl(ttl);
-	ans->resource->data_len= htons(128);
+	ans->resource->data_len= htons(16);
 	 /*	copy into send  */
 	RR_copy_in_(send_buf,stop,ans);
 }
