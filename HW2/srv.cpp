@@ -16,7 +16,7 @@
 
 
 #include "dns_.h"
-#include "config.h"
+ 
 // #include "self.h"
 #define err_quit(m) { perror(m); exit(-1); }
 #define MAX 65536
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
 		//send
 		//else 
-		send_dns(s,buf,csin);
+		dns_main(s,buf, rlen,csin,argv[argc-1]);
 		//	; 
 		
 	

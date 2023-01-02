@@ -182,7 +182,7 @@ void get_need_vec(unsigned short qtype,string  check , vector<vector<string>>& c
         case T_SOA:
             isFind=find_type_name_match(check ,"SOA",contain,res);
             
-            isFind=find_type_name_match("dns" ,"A",contain,res);
+            isFind=find_type_name_match("." ,"NS",contain,res);
 
             break;      
              
@@ -206,9 +206,13 @@ void get_need_vec(unsigned short qtype,string  check , vector<vector<string>>& c
             break;
 
         case T_CNAME:
-            
-            find_type_name_match(check ,"SOA",contain,res);
+            isFind=find_type_name_match(check ,"CNAME",contain,res);
+            if(isFind )
+                find_type_name_match("." ,"NS",contain,res);
+            else
+                find_type_name_match(check ,"SOA",contain,res);
             break;
+             
         default:
             
             break; 

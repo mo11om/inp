@@ -1,12 +1,7 @@
  
 //Types of DNS resource records :)
 
-#define T_A 1 //Ipv4 address
-#define T_NS 2 //Nameserver
-#define T_CNAME 5 // canonical name
-#define T_SOA 6 /* start of authority zone */
-#define T_PTR 12 /* domain name pointer */
-#define T_MX 15 //Mail server
+ 
 
 //Function Prototypes
 void foreign( int cs,char buf[],int slen,struct sockaddr_in csin);
@@ -15,6 +10,7 @@ unsigned char* ReadName(unsigned char*, unsigned char*, int*);
 void get_dns_servers(char* array);
 void send_dns(int s,  char   buf[] ,struct sockaddr_in dest);
 unsigned char* get_qname(char buf[],unsigned char* qname );
+void dns_main( int s,  char  buf[],int rlen ,struct sockaddr_in dest,char * filename);
 //DNS header structure
 struct DNS_HEADER {
 	unsigned short id; // identification number

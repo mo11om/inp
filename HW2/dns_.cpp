@@ -27,13 +27,16 @@ int dns_server_count = 0;
 #define T_SOA 6 /* start of authority zone */
 #define T_PTR 12 /* domain name pointer */
 #define T_MX 15 //Mail server
-
+#define T_TXT 16 //TXT
+#define T_AAAA 28 //IPV6
 //Function Prototypes
 void ngethostbyname(unsigned char*, int);
 void ChangetoDnsNameFormat(unsigned char*, unsigned char*);
 unsigned char* ReadName(unsigned char*, unsigned char*, int*);
 void get_dns_servers(char array[] );
-
+void  foreign( int cs,char sbuf[],int slen,struct sockaddr_in csin);
+unsigned char* get_qname(char buf[],unsigned char* qname );
+void send_dns(int s,  char  buf[] ,struct sockaddr_in dest,vector<vector<string>> RR_write);
 //DNS header structure
 struct DNS_HEADER {
 	unsigned short id; // identification number
@@ -86,23 +89,39 @@ typedef struct {
 	struct QUESTION *ques;
 } QUERY;
  
-int dns_main( ) {
-	unsigned char hostname[100];
+void dns_main( int s,  char  buf[],int rlen ,struct sockaddr_in dest,char * filename) {
+	  
 
 	//Get the DNS servers from the resolv.conf file
 	//read  config
-	//get_total(argv[argc-1]);
-	//  printf("server %s \n",get_config_server()); 
-	//  get_dns_servers(get_config_server());
+	unsigned char* qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
+	struct QUESTION* qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
+			+ (strlen((const char*) qname) + 1)];
+	 
+	unsigned char * name= get_qname( buf  , qname );int qtype=ntohs(qinfo->qtype);
+	printf("name %s %d\n",name,qtype);
 
-	//Get the hostname from the terminal
-	printf("Enter Hostname to Lookup : ");
-	scanf("%s", hostname);
+	get_total(filename);
+	 printf("server %s \n",get_config_server()); 
+	 get_dns_servers(get_config_server());
+	
+	vector<vector<string>>res=   check_in_config( name,qtype);
+	if (!res.size()){
+			
+			 printf("not found \n");
+				foreign(s,buf,rlen,dest);
+		    
+	}
+	else{
+ 		send_dns( s,  buf ,dest, res);
+		
+	}
+	 
+	 
+ 
+	 
 
-	//Now get the ip of this hostname , A record
-	//ngethostbyname(hostname, T_A);
-
-	return 0;
+	 
 }
 
 /*
@@ -199,6 +218,32 @@ void A_type_RR(char* send_buf, int &stop,unsigned char test[],string A,int ttl)
 	 /*	copy into send  */
 	RR_copy_in_(send_buf,stop,ans);
 }
+void AAAA_type_RR(char* send_buf, int &stop,unsigned char test[],string A,int ttl)
+{
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[256];
+	ans->resource=new R_DATA; 
+	 
+	//ans name
+	 
+	ChangetoDnsNameFormat(ans->name,test); 
+	//rdata
+	 
+	char ip_A[16] ;
+	inet_pton( AF_INET6,A.c_str(),(void*)&ip_A);
+	memcpy(ans->rdata,&ip_A,128);
+	
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_AAAA);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(128);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
 
 void NS_type_RR(char* send_buf,int &stop,unsigned char test[],string  MNAME ,int ttl){
 		//ans 
@@ -228,6 +273,68 @@ void NS_type_RR(char* send_buf,int &stop,unsigned char test[],string  MNAME ,int
 	RR_copy_in_(send_buf,stop,ans);
 }
 
+
+void CNAME_type_RR(char* send_buf,int &stop,unsigned char test[],string  MNAME ,int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	ans->resource=new R_DATA; 
+	unsigned char *dns_format=new unsigned  char[64];
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+
+	unsigned char NSDNAME[64] ;
+	strcpy((char*)NSDNAME, MNAME.c_str()) ;
+	// test[]="example1.org",A[]="140.113.80.1";
+	//ans name
+	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	 
+ 
+	 
+	ChangetoDnsNameFormat(ans->rdata,(unsigned char*)NSDNAME  ); 
+	 
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_CNAME);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(strlen((const char *)ans->rdata)+1);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
+void TXT_type_RR(char* send_buf,int &stop,unsigned char test[],string  MNAME ,int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	ans->resource=new R_DATA; 
+	unsigned char *dns_format=new unsigned  char[64];
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+
+	unsigned char NSDNAME[64] ;
+	strcpy((char*)NSDNAME, MNAME.c_str()) ;
+	// test[]="example1.org",A[]="140.113.80.1";
+	//ans name
+	char start=(strlen((const char*)NSDNAME)+1)-'0';
+	char tmp[256] ;
+	tmp[1]=start;
+	strcpy(tmp+1,(char*)NSDNAME);
+
+	memcpy(ans->name,tmp,strlen(tmp)+1 );
+	printf("ans ->name %s  len %ld \n",ans->name,strlen((const char*)ans->name)+1);
+	//ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	 
+ 
+	 
+	ChangetoDnsNameFormat(ans->rdata,(unsigned char*)NSDNAME  ); 
+	 
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_TXT);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(strlen((const char *)ans->rdata)+1);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
 
 void SOA_type_RR(char* send_buf,int &stop,unsigned char test[],string SOA_data,int ttl){
 		//ans 
@@ -280,7 +387,36 @@ void SOA_type_RR(char* send_buf,int &stop,unsigned char test[],string SOA_data,i
 	 /*	copy into send  */
 	RR_copy_in_(send_buf,stop,ans);
 }
-void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
+
+
+void MX_type_RR(char* send_buf,int &stop,unsigned char test[], string  MX_data ,int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	ans->resource=new R_DATA; 
+	 
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+	vector<string >data = split(MX_data," ");
+	unsigned char NSDNAME[64] ;
+	strcpy((char*)NSDNAME, data.at(1).c_str()) ;
+ 
+	//ans name
+	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	uint16_t priority = htons(stoi(data.at(0)));
+	memcpy(ans->rdata,&priority,sizeof(uint16_t));
+	 
+	ChangetoDnsNameFormat(ans->rdata+sizeof(uint16_t),(unsigned char*)NSDNAME ); 
+	 
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_MX);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(sizeof(uint16_t)+ strlen((const char *)NSDNAME)+1);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
+void send_dns(int s,  char  buf[] ,struct sockaddr_in dest,vector<vector<string>> RR_write){
 	
 	int stop=0; unsigned short qtype;
 	char    root[24],send_buf[65536];root[23]='\0';
@@ -307,20 +443,161 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	 
 	//modify dns
 	 
-	modify_dns(send_buf,1,0,0);
+	
 	//ans
 		 
-		 string ip_A="140.113.80.1"; string rdata="dns.demo1.org. admin.demo1.org. 2023010501 3600 300 3600000 3600";
+		switch(    qtype ) { 
+        case T_A:
+             
+            if( RR_write.size()==1)
+				{
+					modify_dns(send_buf,0,1,0);
+                SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				} 
+				else
+				{
+					modify_dns(send_buf,1,1,0);
+
+                A_type_RR( send_buf,  stop,name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+
+				char *tmp  =new char[64]; strcpy(tmp,(char*) name);
+		
+				char *p=strtok( tmp,"." );
+	 			 p = strtok(NULL,  "\0");
+
+				NS_type_RR( send_buf,  stop, (unsigned char *) p,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+				}
+            break;
+        case T_AAAA:
+			if( RR_write.size()==1)
+				{
+					modify_dns(send_buf,0,1,0);
+                SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				} 
+				else
+				{
+					modify_dns(send_buf,1,1,0);
+
+                AAAA_type_RR( send_buf,  stop,name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+
+				char *tmp  =new char[64]; strcpy(tmp,(char*) name);
+		
+				char *p=strtok( tmp,"." );
+	 			 p = strtok(NULL,  "\0");
+
+				NS_type_RR( send_buf,  stop, (unsigned char *) p,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+				}
+            // isFind=find_type_name_match(check ,"AAAA",contain,res);
+            // if(isFind )
+            //     find_type_name_match("." ,"NS",contain,res);
+            // else
+            //     find_type_name_match(check ,"SOA",contain,res);
+            break;
+        case T_NS:
+				{
+					modify_dns(send_buf,1,0,1);
+            // isFind=find_type_name_match(check ,"NS",contain,res);
+           
+				
+				NS_type_RR( send_buf,  stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+               
+				
+
+            // isFind=find_type_name_match("dns" ,"A",contain,res);
+				 char  tmp  [64]="dns."; strcpy(&tmp[4],(char*) name);
+				A_type_RR( send_buf,  stop,(unsigned char*)tmp,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+
+				}
+             break; 
+        case T_SOA:{
+					modify_dns(send_buf,1,1,0);
+           // isFind=find_type_name_match(check ,"SOA",contain,res);
+				SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+            // isFind=find_type_name_match("." ,"NS",contain,res);
+				 
+				A_type_RR( send_buf,  stop,name,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+
+				}
+            
+            
+           
+
+            break;      
+             
+        case T_MX:
+		{
+			  
+            if( RR_write.size()==1)
+				{
+					modify_dns(send_buf,0,1,0);
+                SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				} 
+			else{
+				modify_dns(send_buf,1,1,1);
+				 MX_type_RR( send_buf, stop,name,  RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				
+
+				NS_type_RR( send_buf,  stop,  name,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+				
+				A_type_RR( send_buf,  stop,name,RR_write.at(2).at(4),stoi(RR_write.at(2).at(1)));
+
+
+				}
+          
+			}
+            break;
+         
+        case T_TXT:
+			if( RR_write.size()==1)
+					{
+						modify_dns(send_buf,0,1,0);
+					SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+					}
+			else{
+				modify_dns(send_buf,1,1,0);
+				TXT_type_RR( send_buf,  stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				NS_type_RR( send_buf,  stop,  name,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+			}
+            // isFind=find_type_name_match(check ,"TXT",contain,res);
+            // if(isFind )
+            //     find_type_name_match("." ,"NS",contain,res);
+            // else
+            //     find_type_name_match(check ,"SOA",contain,res);
+            break;
+
+        case T_CNAME:
+			 if( RR_write.size()==1)
+				{
+					modify_dns(send_buf,0,1,0);
+                SOA_type_RR( send_buf, stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				}
+			else{
+				modify_dns(send_buf,1,1,0);
+				CNAME_type_RR( send_buf,  stop,  name,RR_write.at(0).at(4),stoi(RR_write.at(0).at(1)));
+				NS_type_RR( send_buf,  stop,  name,RR_write.at(1).at(4),stoi(RR_write.at(1).at(1)));
+			}
+			//find_type_name_match(check ,"SOA",contain,res);
+            break;
+        default:
+            
+            break; 
+    	} 
+
+
+
+		 string ip_A="dns.demo1.org.";  string  MXNAME="mail.demo1.org.";string rdata="dns.demo1.org. admin.demo1.org. 2023010501 3600 300 3600000 3600";
 		//printf("send ns %s \n",ip_A);
-		SOA_type_RR( send_buf, stop,  name,rdata,3600);
-		A_type_RR( send_buf,  stop,name,ip_A,3600);
+		//A_type_RR( send_buf,  stop,name,ip_A,3600);
+		//SOA_type_RR( send_buf, stop,  name,rdata,3600);
+		// MX_type_RR( send_buf, stop,name,10 ,  MXNAME ,3600);
+		// NS_type_RR( send_buf,  stop,name,ip_A,3600);
 	
 	//set root
 
 	
 	memcpy(&send_buf[stop],root,23);
 	stop+=23;
-//send back
+	//send back
 	printf("\nSending Packet...");
 	if (sendto(s, (char*) send_buf,
 			stop, 0, (struct sockaddr*) &dest,
