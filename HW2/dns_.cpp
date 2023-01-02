@@ -10,8 +10,12 @@
 #include<sys/socket.h>    //you know what this is for
 #include<arpa/inet.h> //inet_addr , inet_ntoa , ntohs etc
 #include<netinet/in.h>
-
  
+#include <vector>
+#include <string> 
+#include "config.h"
+
+using namespace std;
 //List of DNS Servers registered on the system
 char dns_servers[10][100];
 int dns_server_count = 0;
@@ -82,21 +86,24 @@ typedef struct {
 	struct QUESTION *ques;
 } QUERY;
  
-// int main(int argc, char *argv[]) {
-// 	unsigned char hostname[100];
+int dns_main( ) {
+	unsigned char hostname[100];
 
-// 	//Get the DNS servers from the resolv.conf file
-// 	get_dns_servers();
+	//Get the DNS servers from the resolv.conf file
+	//read  config
+	//get_total(argv[argc-1]);
+	//  printf("server %s \n",get_config_server()); 
+	//  get_dns_servers(get_config_server());
 
-// 	//Get the hostname from the terminal
-// 	printf("Enter Hostname to Lookup : ");
-// 	scanf("%s", hostname);
+	//Get the hostname from the terminal
+	printf("Enter Hostname to Lookup : ");
+	scanf("%s", hostname);
 
-// 	//Now get the ip of this hostname , A record
-// 	ngethostbyname(hostname, T_A);
+	//Now get the ip of this hostname , A record
+	//ngethostbyname(hostname, T_A);
 
-// 	return 0;
-// }
+	return 0;
+}
 
 /*
  * Perform a DNS query by sending a packet
@@ -166,18 +173,21 @@ void RR_copy_in_(char send_buf[],int& stop,RES_RECORD* ans ){
 	stop+= ntohs(ans->resource->data_len)  ;
 
 }
-void A_type_RR(char* send_buf, int &stop,unsigned char test[],unsigned char A[],int ttl){
+void A_type_RR(char* send_buf, int &stop,unsigned char test[],string A,int ttl)
+{
 		//ans 
 	struct RES_RECORD *ans=new RES_RECORD  ;
+	
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[256];
 	ans->resource=new R_DATA; 
-	unsigned char *dns_format=new unsigned  char[64]; 
-	// test[]="example1.org",A[]="140.113.80.1";
+	 
 	//ans name
-	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
-	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	 
+	ChangetoDnsNameFormat(ans->name,test); 
 	//rdata
+	 
 	uint32_t ip_A=0;
-	inet_pton(AF_INET,"140.113.80.1",(void*)&ip_A);
+	inet_pton(AF_INET,A.c_str(),(void*)&ip_A);
 	memcpy(ans->rdata,&ip_A,sizeof(uint32_t));
 	
 	
@@ -190,6 +200,86 @@ void A_type_RR(char* send_buf, int &stop,unsigned char test[],unsigned char A[],
 	RR_copy_in_(send_buf,stop,ans);
 }
 
+void NS_type_RR(char* send_buf,int &stop,unsigned char test[],string  MNAME ,int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	ans->resource=new R_DATA; 
+	unsigned char *dns_format=new unsigned  char[64];
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+
+	unsigned char NSDNAME[64] ;
+	strcpy((char*)NSDNAME, MNAME.c_str()) ;
+	// test[]="example1.org",A[]="140.113.80.1";
+	//ans name
+	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	 
+ 
+	 
+	ChangetoDnsNameFormat(ans->rdata,(unsigned char*)NSDNAME  ); 
+	 
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_NS);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(strlen((const char *)ans->rdata)+1);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
+
+
+void SOA_type_RR(char* send_buf,int &stop,unsigned char test[],string SOA_data,int ttl){
+		//ans 
+	struct RES_RECORD *ans=new RES_RECORD  ;
+	int count=0; 
+	 
+
+
+	vector<string >data = split(SOA_data," ");
+	ans->resource=new R_DATA; 
+	 
+	ans->name = new unsigned char[64]  ;ans->rdata= new unsigned char[64];
+
+	 
+	//ans name
+	ChangetoDnsNameFormat(ans->name,(unsigned char*)test); 
+	//rdata
+	struct soa_rdata {
+		uint32_t SERIAL    ;  
+		uint32_t REFRESH    ;
+		uint32_t RETRY       ;
+		uint32_t EXPIRE      ;
+		uint32_t MINIMUM     ;
+	};
+	soa_rdata* s_rada=new soa_rdata;
+	unsigned char MNAME[64] ;
+	strcpy((char*)MNAME,data.at(0).c_str()) ;
+	unsigned char RNAME [64];
+	strcpy((char*)RNAME,data.at(1).c_str()) ;
+
+	s_rada-> SERIAL   = ntohl (stoi(data.at(2)));
+	s_rada-> REFRESH =  ntohl (stoi(data.at(3)));
+	s_rada-> RETRY  =   ntohl (stoi(data.at(4)));
+	s_rada-> EXPIRE =   ntohl (stoi(data.at(5)));
+	s_rada-> MINIMUM =   ntohl (stoi(data.at(6)));
+
+
+	ChangetoDnsNameFormat(ans->rdata,(unsigned char*) MNAME  );
+	count+= strlen((const char *)ans->rdata)+1;
+	ChangetoDnsNameFormat(&ans->rdata[strlen((const char *)ans->rdata)+1],(unsigned char*) RNAME  ); 
+	count+= strlen((const char *)RNAME)+1;
+	memcpy(&ans-> rdata[count],s_rada,sizeof(soa_rdata)); 
+	count+= sizeof(soa_rdata);
+	
+	//R-DATA-resource
+	ans->resource->type =htons(T_SOA);
+	ans->resource->_class=htons(1);
+	ans->resource->ttl=   ntohl(ttl);
+	ans->resource->data_len= htons(count);
+	 /*	copy into send  */
+	RR_copy_in_(send_buf,stop,ans);
+}
 void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	
 	int stop=0; unsigned short qtype;
@@ -199,7 +289,17 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	unsigned char* qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
 	struct QUESTION* qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
 			+ (strlen((const char*) qname) + 1)];
-	
+	 
+	name= get_qname( buf  , qname );qtype=ntohs(qinfo->qtype);
+	printf("name %s %d\n",name,qtype);
+	//vector<vector<string>>res=   check_in_config( name,qtype);
+	// if (!res.size()){
+			
+		// 	 cout<<"not found \n";
+		// 		foreign(s,buf,rlen,csin);
+		//    return
+		// 	}
+
 	//initial copy header and get root
 	Header_question_in(  buf ,  send_buf ,  stop,   root  );
 	 
@@ -208,9 +308,12 @@ void send_dns(int s,  char  buf[] ,struct sockaddr_in dest){
 	//modify dns
 	 
 	modify_dns(send_buf,1,0,0);
-		//ans
-		unsigned  char  rr_name[]="example1.org",ip_A[]="140.113.80.1";
-		A_type_RR( send_buf,  stop,rr_name,ip_A,3600);
+	//ans
+		 
+		 string ip_A="140.113.80.1"; string rdata="dns.demo1.org. admin.demo1.org. 2023010501 3600 300 3600000 3600";
+		//printf("send ns %s \n",ip_A);
+		SOA_type_RR( send_buf, stop,  name,rdata,3600);
+		A_type_RR( send_buf,  stop,name,ip_A,3600);
 	
 	//set root
 
@@ -337,13 +440,15 @@ void get_dns_servers(char array[]) {
  * */
 void ChangetoDnsNameFormat(unsigned char* dns, unsigned char* host) {
 	int lock = 0, i;
-	strcat((char*) host, ".");
+	char* tmp = new  char[64] ;
+	strcpy(tmp,(const char*) host);
+	strcat((char*) tmp, ".");
 
-	for (i = 0; i < strlen((char*) host); i++) {
-		if (host[i] == '.') {
+	for (i = 0; i < strlen((char*) tmp); i++) {
+		if (tmp[i] == '.') {
 			*dns++ = i - lock;
 			for (; lock < i; lock++) {
-				*dns++ = host[lock];
+				*dns++ = tmp[lock];
 			}
 			lock++; //or lock=i+1;
 		}

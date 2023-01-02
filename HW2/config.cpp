@@ -59,8 +59,10 @@ const std::vector<std::string> split(const std::string& str, const std::string& 
 vector<string> get_every_line(string line){
     string pattern = ",";
     vector<string> args= split(line, pattern);
+
+    
     // cout<< " arg "<< line<<endl;
-    // for(int i =0;i<args.size();i++)cout<<i<<(args.at(i))<<" ";
+    //for(int i =0;i<args.size();i++)cout<<i<<(args.at(i))<<" ";
     // printf("\n");
      
     return args;
@@ -240,10 +242,16 @@ vector<vector<string>> check_in_config(unsigned char name[],unsigned short qtype
     return arr;
 }
 
-
+void check_SoA(vector<string>& soa){
+    vector<string> rdata= split( soa.at(4)," ");
+     for(int i =0;i<rdata.size();i++)cout<<i<<" "<<(rdata.at(i))<<" ";
+    cout <<"\n";
+    // for(int i= 0 ; i<strlen(test)+1 ;i++) printf("%d %c\n",i,test[i]);
+}
 // int main(int argc, char *argv[]) {
-   
-//     get_total(argv[argc-2]);
-//     vector<vector<string>>res=   check_in_config(argv[argc-1]);
-//     if (!res.size()) cout<<"not found \n";
+//     unsigned char test[]= "demo1.org.";
+//      get_total(argv[argc-1]);
+//     vector<vector<string>>res=   check_in_config(test,T_A);
+//     check_SoA(res.at(0));
+    
 // }
