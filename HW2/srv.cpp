@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
 
 	if(bind(s, (struct sockaddr*) &sin, sizeof(sin)) < 0)
 		err_quit("bind");
-	//read  config
-	get_total(argv[argc-1]); printf("server %s \n",get_config_server()); get_dns_servers(get_config_server());
+
+
 	while(1) {
 		struct sockaddr_in csin;
 		socklen_t csinlen = sizeof(csin);
@@ -57,24 +57,20 @@ int main(int argc, char *argv[]) {
 		}
 		
 		//fix question
-		unsigned char* qname = (unsigned char*) &buf[sizeof(struct DNS_HEADER)];
- 		struct QUESTION* qinfo = (struct QUESTION*) &buf[sizeof(struct DNS_HEADER)
-			+ (strlen((const char*) qname) + 1)];
-		//get name and type
-		name= get_qname( buf  , qname );qtype=ntohs(qinfo->qtype);
-		printf("name %s %d\n",name,qtype);
+		
 		//find 
 
 		
-		vector<vector<string>>res=   check_in_config( name,qtype);
-		if (!res.size()){
+		//vector<vector<string>>res=   check_in_config( name,qtype);
+		// if (!res.size()){
 			
-			 cout<<"not found \n";
-				foreign(s,buf,rlen,csin);
-			}
+		// 	 cout<<"not found \n";
+		// 		foreign(s,buf,rlen,csin);
+		// 	}
 
 		//send
-		else send_dns(s,buf,csin);
+		//else 
+		send_dns(s,buf,csin);
 		//	; 
 		
 	
