@@ -14,11 +14,19 @@
 //data structure
 #include <vector>
 #include <map>
-
+ 
  
 
 // #include "dns.h"
 #define MAX 65536
+#define T_A 1 //Ipv4 address
+#define T_NS 2 //Nameserver
+#define T_CNAME 5 // canonical name
+#define T_SOA 6 /* start of authority zone */
+#define T_PTR 12 /* domain name pointer */
+#define T_MX 15 //Mail server
+#define T_TXT 16 //Mail server
+#define T_AAAA 28 //Mail server
 using namespace std;
 
  
@@ -58,6 +66,9 @@ vector<string> get_every_line(string line){
     return args;
     
 }
+
+
+
 vector<vector<string>> get_file_split_res(const char* file_name ){
     char buf[MAX]={'\0'};
 
@@ -89,7 +100,7 @@ vector<vector<string>> get_file_split_res(const char* file_name ){
     return res;
     
 }
-void print_ALL(vector<vector <string>>Zone){
+void print_ALL(vector<vector <string>>&Zone){
     for(int i =0  ;i<Zone.size();i++){
         
         for (int j =0  ;j<Zone.at(i).size();j++){
@@ -127,18 +138,98 @@ void get_total(char* file_name ){
     
     
 }
+
+bool find_type_name_match(string name,string type, vector<vector<string>>& contain,vector<vector<string>>& res)
+{
+    for (int i =0;i<contain.size();i++){
+         cout<<type <<" "<<contain.at(i).at(3)<<" " << contain.at(i).at(0)<<endl;
+        if (type==contain.at(i).at(3))
+            if (name.find(contain.at(i).at(0)) != std::string::npos) 
+                {res.push_back(contain.at(i));
+                    return true;
+                }
+
+    }
+    return false;
+}
+void get_need_vec(unsigned short qtype,string  check , vector<vector<string>>& contain,vector<vector<string>>& res )
+{
+     
+    bool isFind=false;
+     switch(    qtype ) { 
+        case T_A:
+            isFind=find_type_name_match(check ,"A",contain,res);
+            if(isFind )
+                find_type_name_match("." ,"NS",contain,res);
+            else
+                find_type_name_match(check ,"SOA",contain,res);
+            break;
+        case T_AAAA:
+            isFind=find_type_name_match(check ,"AAAA",contain,res);
+            if(isFind )
+                find_type_name_match("." ,"NS",contain,res);
+            else
+                find_type_name_match(check ,"SOA",contain,res);
+            break;
+        case T_NS:
+            isFind=find_type_name_match(check ,"NS",contain,res);
+            
+            isFind=find_type_name_match("dns" ,"A",contain,res);
+
+            break; 
+        case T_SOA:
+            isFind=find_type_name_match(check ,"SOA",contain,res);
+            
+            isFind=find_type_name_match("dns" ,"A",contain,res);
+
+            break;      
+             
+        case T_MX:
+            isFind=find_type_name_match(check ,"MX",contain,res);
+            if(isFind ){
+                find_type_name_match("." ,"NS",contain,res);
+                find_type_name_match("mail","A",contain,res);
+                }
+            else
+                find_type_name_match(check ,"SOA",contain,res);
+
+            break;
+         
+        case T_TXT:
+            isFind=find_type_name_match(check ,"TXT",contain,res);
+            if(isFind )
+                find_type_name_match("." ,"NS",contain,res);
+            else
+                find_type_name_match(check ,"SOA",contain,res);
+            break;
+
+        case T_CNAME:
+            
+            find_type_name_match(check ,"SOA",contain,res);
+            break;
+        default:
+            
+            break; 
+    } 
+}
+
+
+
+
 vector<vector<string>> check_in_config(unsigned char name[],unsigned short qtype){
-    string  check ( reinterpret_cast< char const* >(name) ) ;
-    cout<<"check "<< name<<endl;
+    string  check ( reinterpret_cast< char const* >(name) ) ;  
+     vector<vector <string>>  found;
+    cout<<"check "<< name<<endl ;cout<<qtype<<endl;
     map<string, vector<vector <string>>>::iterator it;
     for (it=all_dns_record.begin(); it!=all_dns_record.end();it++){
         if (check.find(it->first) != std::string::npos) {
                 std::cout << "found!" << '\n';
-
-                return it->second;
+                get_need_vec(qtype, check ,it->second,    found);
+                print_ALL(found);
+                return found;
             }
     }
-   vector<vector <string>>  found;
+
     return   found;
 }
 
